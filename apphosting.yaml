@@ -1,0 +1,19 @@
+# Firebase App Hosting configuration
+# Docs: https://firebase.google.com/docs/app-hosting/configure
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+
+# Public environment variables (safe to expose to the browser must be NEXT_PUBLIC_*).
+# Secrets (e.g. ANTHROPIC_API_KEY later) should be wired via Cloud Secret Manager:
+#   firebase apphosting:secrets:set ANTHROPIC_API_KEY
+# then referenced here with `secret:` instead of `value:`.
+env:
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: "https://brasiltempo.web.app"
+    availability:
+      - BUILD
+      - RUNTIME
