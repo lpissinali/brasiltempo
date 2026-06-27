@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// BrasilTempo Firestore is used ONLY as a server-side cache, written and read
+// via the firebase-admin SDK from the App Hosting backend. The Admin SDK
+// bypasses these rules entirely, so we deny all direct client access. No
+// browser ever touches Firestore directly.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

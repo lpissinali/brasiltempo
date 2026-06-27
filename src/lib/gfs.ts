@@ -1,6 +1,7 @@
 import type { City, Forecast, DailyWeather, HourlyWeather } from './types';
 import { deriveWeatherCode, cloudFromRH } from './sky';
 import { sunTimes } from './sun';
+import { getCache, setCache } from './firestore';
 
 // ---------------------------------------------------------------------------
 // NOAA GFS via PacIOOS ERDDAP — public domain, commercial use allowed, no key.
@@ -24,7 +25,18 @@ const DATASET = process.env.GFS_DATASET || 'ncep_global';
 const VARS = ['tmp2m', 'rh2m', 'pratesfc', 'dswrfsfc', 'ugrd10m', 'vgrd10m', 'prmslmsl'] as const;
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 min — protect ERDDAP from per-visitor hits
+
+// L1: per-instance in-memory cache (fastest, but dies on cold start).
 const cache = new Map<string, { data: Forecast; ts: number }>();
+
+// L2: Firestore cache (shared across instances, survives cold starts).
+const FORECAST_COLLECTION = 'forecastCache';
+
+function cacheKey(city: City): string {
+  // Firestore doc IDs can't contain '/'. Coords (4dp) are stable per location;
+  // sun/tz derivations depend only on lat/lon, so this is a safe identity.
+  return `${city.lat.toFixed(4)}_${city.lon.toFixed(4)}`.replace(/\//g, '_');
+}
 
 interface Step {
   utc: Date;
@@ -243,13 +255,29 @@ function normalize(city: City, steps: Step[]): Forecast {
 }
 
 export async function getForecast(city: City): Promise<Forecast> {
-  const key = `${city.lat},${city.lon}`;
+  const key = cacheKey(city);
+
+  // L1 — in-memory (per instance, fastest).
   const hit = cache.get(key);
   if (hit && Date.now() - hit.ts < CACHE_TTL_MS) return hit.data;
 
+  // L2 — Firestore (shared, survives cold starts). No-ops to null locally.
+  const cached = await getCache<Forecast>(FORECAST_COLLECTION, key, CACHE_TTL_MS);
+  if (cached) {
+    cache.set(key, { data: cached, ts: Date.now() });
+    return cached;
+  }
+
+  // Miss — hit NOAA ERDDAP, then populate both cache layers.
   const rows = await fetchRowsWithFallback(city.lat, city.lon);
   const steps = parseSteps(rows, city.tz);
   const data = normalize(city, steps);
+
   cache.set(key, { data, ts: Date.now() });
+  // Await so the durable write reliably lands before the instance can freeze;
+  // its latency is negligible next to the ERDDAP fetch we just did, and
+  // setCache swallows its own errors so this never breaks the response.
+  await setCache(FORECAST_COLLECTION, key, data);
+
   return data;
 }
