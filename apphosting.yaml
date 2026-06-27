@@ -13,7 +13,29 @@ runConfig:
 # then referenced here with `secret:` instead of `value:`.
 env:
   - variable: NEXT_PUBLIC_SITE_URL
-    value: "https://brasiltempo.web.app"
+    value: "https://brasiltempo.com.br"
     availability:
       - BUILD
       - RUNTIME
+
+  # Haiku model for Zé's phrases (public, not a secret). Optional — the code
+  # defaults to this same value if unset.
+  - variable: ANTHROPIC_MODEL
+    value: "claude-haiku-4-5-20251001"
+    availability:
+      - RUNTIME
+  - variable: ANTHROPIC_API_KEY
+    secret: ANTHROPIC_API_KEY
+  # --- Secrets (uncomment AFTER creating them in Secret Manager) ---
+  # Create first, then deploy, or the rollout fails on a missing secret:
+  #   firebase apphosting:secrets:set ANTHROPIC_API_KEY
+  #   firebase apphosting:secrets:set CRON_SECRET
+  #
+  # - variable: ANTHROPIC_API_KEY
+  #   secret: ANTHROPIC_API_KEY
+  #   availability:
+  #     - RUNTIME
+  # - variable: CRON_SECRET
+  #   secret: CRON_SECRET
+  #   availability:
+  #     - RUNTIME

@@ -1,6 +1,7 @@
 import { DEFAULT_CITY } from '@/lib/cities';
 import { getForecast } from '@/lib/gfs';
 import { buildView } from '@/lib/verdicts';
+import { getZePhrases } from '@/lib/phrases';
 import { VerdictGrid } from '@/components/VerdictCard';
 import { FreeQuestionBox } from '@/components/FreeQuestionBox';
 import {
@@ -18,7 +19,8 @@ export const revalidate = 1800;
 
 export default async function HomePage() {
   const forecast = await getForecast(DEFAULT_CITY);
-  const v = buildView(DEFAULT_CITY, forecast);
+  const phrases = await getZePhrases({ key: `city_${DEFAULT_CITY.slug}`, cityName: DEFAULT_CITY.n });
+  const v = buildView(DEFAULT_CITY, forecast, phrases);
 
   return (
     <main className="container">

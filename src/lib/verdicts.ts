@@ -1,6 +1,6 @@
 import type { City, Forecast, VerdictCardData } from './types';
 import { skyMap, degToCompass } from './sky';
-import { zePhrase, daySeed } from './phrases';
+import { zePhrase, daySeed, type PoolKey, type ZePhraseSet } from './phrases';
 import { moonPhase } from './moon';
 import { sunTimes } from './sun';
 
@@ -31,7 +31,8 @@ export interface BuiltView {
   windCompass: string;
   gust: number;
   uv: number;
-  cards: VerdictCardData[];
+  cards: VerdictCardData[]; // the 2–3 most relevant, for the homepage section
+  allCards: VerdictCardData[]; // every verdict, for intent lookup (free-question box)
   summary: string;
   summaryZe: string;
   seoIntro: string;
@@ -47,8 +48,11 @@ export interface BuiltView {
   fetchedAt: string;
 }
 
-export function buildView(city: City, d: Forecast): BuiltView {
+export function buildView(city: City, d: Forecast, phrases: ZePhraseSet = {}): BuiltView {
   const seed = daySeed();
+  // Prefer an AI-generated line when present for this pool; otherwise fall back
+  // to the deterministic static pool. The seam stays in one place.
+  const ze = (pool: PoolKey): string => phrases[pool] ?? zePhrase(pool, seed);
   const cur = d.current;
   const dl = d.daily;
   const sky = skyMap(cur.weather_code, cur.is_day);
@@ -118,16 +122,7 @@ export function buildView(city: City, d: Forecast): BuiltView {
   else { casBig = 'NEM PRECISA'; casPool = 'casNao'; }
   const casMeta = `mín ${r(appMin)}°`;
 
-  // --- 5. Estender a roupa hoje ---
-  const codeT = num(dl.weather_code, 0, 3);
-  let roupaBig: string, roupaPool: Parameters<typeof zePhrase>[0];
-  if (probToday >= 50) { roupaBig = 'NEM TENTA'; roupaPool = 'roupaNao'; }
-  else if (probToday >= 25) { roupaBig = 'ARRISCA'; roupaPool = 'roupaArr'; }
-  else if (codeT <= 1) { roupaBig = 'PODE ESTENDER'; roupaPool = 'roupaPode'; }
-  else { roupaBig = 'VAI DEMORAR'; roupaPool = 'roupaDemora'; }
-  const roupaMeta = `${probToday}% chuva hoje`;
-
-  // --- 6. Protetor hoje ---
+  // --- 5. Protetor hoje ---
   let uvBig: string, uvPool: Parameters<typeof zePhrase>[0];
   if (uv >= 8) { uvBig = 'PASSA AGORA'; uvPool = 'uvAgora'; }
   else if (uv >= 6) { uvBig = 'PASSA SIM'; uvPool = 'uvSim'; }
@@ -135,14 +130,34 @@ export function buildView(city: City, d: Forecast): BuiltView {
   else { uvBig = 'RELAXA'; uvPool = 'uvRelaxa'; }
   const uvMeta = `UV ${r(uv)}`;
 
-  const cards: VerdictCardData[] = [
-    { key: 'chover', icon: '🌧️', q: 'Vai chover amanhã?', big: rainBig, ze: zePhrase(rainPool, seed), meta: rainMeta, accent: '#2E7BD6' },
-    { key: 'praia', icon: '🏖️', q: 'Posso ir à praia no fds?', big: praiaBig, ze: zePhrase(praiaPool, seed), meta: praiaMeta, accent: '#0EA5A5' },
-    { key: 'casaco', icon: '🧥', q: 'Preciso de casaco hoje?', big: casBig, ze: zePhrase(casPool, seed), meta: casMeta, accent: '#6366F1' },
-    { key: 'churrasco', icon: '🍖', q: 'Rola um churrasco no fds?', big: churBig, ze: zePhrase(churPool, seed), meta: churMeta, accent: '#E8590C' },
-    { key: 'roupa', icon: '👕', q: 'Dá pra estender a roupa?', big: roupaBig, ze: zePhrase(roupaPool, seed), meta: roupaMeta, accent: '#2E7BD6' },
-    { key: 'protetor', icon: '🧴', q: 'Tenho que passar protetor?', big: uvBig, ze: zePhrase(uvPool, seed), meta: uvMeta, accent: '#F59E0B' },
+  // --- relevance: surface only the questions that actually matter right now ---
+  // "fds" questions (praia/churrasco) matter more as the weekend approaches; the
+  // cold/UV questions matter only when it's actually cold / sunny; rain-tomorrow
+  // is the near-constant anchor. Each card carries a 0–100 score; buildView then
+  // returns the top 2–3 so the section stays sharp instead of dumping six cards.
+  const todayDow = dow(times[0] || new Date().toISOString().slice(0, 10));
+  const dWeekend = Math.min((6 - todayDow + 7) % 7, (0 - todayDow + 7) % 7); // days to Sat/Sun
+  const wkFactor = dWeekend === 0 ? 1 : dWeekend <= 2 ? 0.85 : 0.62;
+
+  const relRain = rainBig === 'VAI SIM' ? 92 : rainBig === 'TALVEZ' ? 74 : 48;
+  const relPraia = (ps >= 6 ? 86 : ps >= 3 ? 64 : 46) * wkFactor;
+  const relCasaco = appMin < 14 ? 90 : appMin <= 18 ? 66 : 28;
+  const relChur = (churBig === 'ACENDE A GRELHA' ? 80 : churBig === 'PLANO B' ? 60 : 50) * wkFactor;
+  const relUv = uv >= 8 ? 90 : uv >= 6 ? 70 : uv >= 3 ? 46 : 22;
+
+  const allCards: VerdictCardData[] = [
+    { key: 'chover', icon: '🌧️', q: 'Vai chover amanhã?', big: rainBig, ze: ze(rainPool), meta: rainMeta, accent: '#2E7BD6', rel: relRain },
+    { key: 'praia', icon: '🏖️', q: 'Posso ir à praia no fds?', big: praiaBig, ze: ze(praiaPool), meta: praiaMeta, accent: '#0EA5A5', rel: relPraia },
+    { key: 'casaco', icon: '🧥', q: 'Preciso de casaco hoje?', big: casBig, ze: ze(casPool), meta: casMeta, accent: '#6366F1', rel: relCasaco },
+    { key: 'churrasco', icon: '🍖', q: 'Rola um churrasco no fds?', big: churBig, ze: ze(churPool), meta: churMeta, accent: '#E8590C', rel: relChur },
+    { key: 'protetor', icon: '🧴', q: 'Tenho que passar protetor?', big: uvBig, ze: ze(uvPool), meta: uvMeta, accent: '#F59E0B', rel: relUv },
   ];
+
+  // Show cards above the relevance floor (max 3), but never fewer than 2.
+  const REL_FLOOR = 55;
+  const ranked = [...allCards].sort((a, b) => b.rel - a.rel);
+  let cards = ranked.filter((c) => c.rel >= REL_FLOOR).slice(0, 3);
+  if (cards.length < 2) cards = ranked.slice(0, 2);
 
   // --- summary + SEO prose (data-anchored) ---
   const ufFull = city.uf ? `${city.n} (${city.uf})` : city.n;
@@ -153,17 +168,17 @@ export function buildView(city: City, d: Forecast): BuiltView {
   const uvTxt = uv >= 8 ? 'muito alto — capriche no protetor' : uv >= 6 ? 'alto, vale o protetor' : uv >= 3 ? 'moderado' : 'baixo';
 
   const summary = `Hoje em ${city.n}, ${sky.label.toLowerCase()} com máxima de ${maxToday}° e mínima de ${minToday}°, ${rainTodayTxt} (${probToday}%). Amanhã ${amanhaTxt}. No fim de semana ${fdsTxt}, e pro churrasco ${churTxt}. O índice UV chega a ${r(uv)}, ${uvTxt}.`;
-  const summaryZe = zePhrase('resumo', seed);
+  const summaryZe = ze('resumo');
 
   const sunrise = (dl.sunrise[0] || '').slice(11) || '—';
   const sunset = (dl.sunset[0] || '').slice(11) || '—';
   const seoIntro = `A previsão do tempo em ${ufFull} aponta ${sky.label.toLowerCase()} neste momento, com ${temp}°C e sensação de ${feels}°C. A umidade do ar está em ${humidity}% e o vento sopra a ${windKmh} km/h. O sol nasce às ${sunrise} e se põe às ${sunset}. Para hoje, a máxima prevista é de ${maxToday}°C e a mínima de ${minToday}°C, com ${probToday}% de chance de chuva. O Zé resume tudo isso em vereditos diretos logo abaixo, pra você decidir rapidinho se dá praia, churrasco ou se é melhor levar o casaco.`;
 
   const faqs = [
-    { q: `Vai chover amanhã em ${city.n}?`, a: `Para amanhã, a chance de chuva é de ${prob1}% com previsão de ${r(sum1)}mm. Resumindo: ${rainBig.toLowerCase()}. ${zePhrase(rainPool, seed)}` },
-    { q: `Faz frio hoje em ${city.n}?`, a: `A mínima da sensação térmica hoje é de cerca de ${r(appMin)}°C. Veredito do casaco: ${casBig.toLowerCase()}. ${zePhrase(casPool, seed)}` },
+    { q: `Vai chover amanhã em ${city.n}?`, a: `Para amanhã, a chance de chuva é de ${prob1}% com previsão de ${r(sum1)}mm. Resumindo: ${rainBig.toLowerCase()}. ${ze(rainPool)}` },
+    { q: `Faz frio hoje em ${city.n}?`, a: `A mínima da sensação térmica hoje é de cerca de ${r(appMin)}°C. Veredito do casaco: ${casBig.toLowerCase()}. ${ze(casPool)}` },
     { q: `Dá pra ir à praia neste fim de semana em ${city.n}?`, a: `O melhor dia do fim de semana é ${DIA[dow(times[praiaI])]}, com máxima de ${r(num(dl.temperature_2m_max, praiaI, 25))}°C e ${num(dl.precipitation_probability_max, praiaI, 0)}% de chuva. Veredito: ${praiaBig.toLowerCase()}.` },
-    { q: `Qual o índice UV hoje em ${city.n}?`, a: `O índice UV máximo previsto é ${r(uv)} (${uvTxt}). ${zePhrase(uvPool, seed)}` },
+    { q: `Qual o índice UV hoje em ${city.n}?`, a: `O índice UV máximo previsto é ${r(uv)} (${uvTxt}). ${ze(uvPool)}` },
   ];
 
   // --- 7-day strip ---
@@ -237,7 +252,7 @@ export function buildView(city: City, d: Forecast): BuiltView {
     temp, feels, skyEmoji: sky.emoji, skyLabel: sky.label,
     maxToday, minToday, probToday, humidity, windKmh,
     windDir: cur.wind_direction_10m, windCompass: degToCompass(cur.wind_direction_10m), gust: r(cur.wind_gusts_10m), uv: r(uv),
-    cards, summary, summaryZe, seoIntro, faqs, days, astro,
+    cards, allCards, summary, summaryZe, seoIntro, faqs, days, astro,
     metrics, hours, rainAlert, daylight, moon,
     source: d.source, fetchedAt: d.fetchedAt,
   };

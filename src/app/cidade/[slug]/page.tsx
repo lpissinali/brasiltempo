@@ -5,6 +5,7 @@ import type { City } from '@/lib/types';
 import { getCityBySlug } from '@/lib/cities';
 import { getForecast } from '@/lib/gfs';
 import { buildView } from '@/lib/verdicts';
+import { getZePhrases } from '@/lib/phrases';
 import { searchPlaces, placeToCity } from '@/lib/geocode';
 import { offsetHoursForZone } from '@/lib/tz';
 import { VerdictGrid } from '@/components/VerdictCard';
@@ -58,8 +59,15 @@ export default async function CidadePage({ params, searchParams }: { params: { s
   const city = await resolveCity(params.slug, searchParams);
   if (!city) notFound();
 
+  // Curated cities get their own AI phrase bucket (worth pre-warming); long-tail
+  // searched cities share the cheap global daily set.
+  const curated = getCityBySlug(params.slug);
+  const scope = curated
+    ? { key: `city_${curated.slug}`, cityName: curated.n }
+    : { key: 'global' };
   const forecast = await getForecast(city);
-  const v = buildView(city, forecast);
+  const phrases = await getZePhrases(scope);
+  const v = buildView(city, forecast, phrases);
   const place = city.uf ? `${city.n}, ${city.uf}` : city.n;
 
   return (

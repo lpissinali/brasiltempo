@@ -66,4 +66,5 @@ export interface VerdictCardData {
   ze: string; // Zé's funny line
   meta: string; // supporting data
   accent: string; // hex accent color
+  rel: number; // relevance score (0–100) — drives which 2–3 cards are shown
 }
