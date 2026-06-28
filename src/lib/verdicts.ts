@@ -3,6 +3,7 @@ import { skyMap, degToCompass } from './sky';
 import { zePhrase, daySeed, type PoolKey, type ZePhraseSet } from './phrases';
 import { moonPhase, moonRiseSet } from './moon';
 import { sunTimes } from './sun';
+import { isCoastal } from './coast';
 
 // Verdict thresholds ported verbatim from the prototype. All transparent and
 // tunable. The engine reads the normalized Forecast (Open-Meteo shape), so it
@@ -95,7 +96,12 @@ export function buildView(city: City, d: Forecast, phrases: ZePhraseSet = {}): B
   for (let i = 0; i < times.length; i++) { const w = dow(times[i]); if (w === 0 || w === 6) wk.push(i); }
   if (!wk.length) wk = [Math.min(5, times.length - 1), Math.min(6, times.length - 1)];
 
-  // --- 2. Praia no fds ---
+  // --- 2. Weekend outdoors — the BEACH verdict only where there's actually a
+  //        beach (open water within ~30km, decided from coords by isCoastal);
+  //        everywhere inland it becomes a generic "rolê ao ar livre" verdict so
+  //        the Zé never tells someone in Brasília to hit the sand. Same scoring:
+  //        good weather is good weather, beach or park. ---
+  const coastal = isCoastal(city.lat, city.lon);
   const score = (i: number) => {
     const p = num(dl.precipitation_probability_max, i, 50);
     const tm = num(dl.temperature_2m_max, i, 25);
@@ -111,11 +117,20 @@ export function buildView(city: City, d: Forecast, phrases: ZePhraseSet = {}): B
   let praiaI = wk[0];
   wk.forEach((i) => { if (score(i) > score(praiaI)) praiaI = i; });
   const ps = score(praiaI);
-  let praiaBig: string, praiaPool: Parameters<typeof zePhrase>[0];
-  if (ps >= 6) { praiaBig = 'BORA'; praiaPool = 'praiaBora'; }
-  else if (ps >= 3) { praiaBig = 'DÁ PRA ARRISCAR'; praiaPool = 'praiaArr'; }
-  else { praiaBig = 'FICA EM CASA'; praiaPool = 'praiaCasa'; }
-  const praiaMeta = `${DIA[dow(times[praiaI])]} · ${r(num(dl.temperature_2m_max, praiaI, 25))}° · ${num(dl.precipitation_probability_max, praiaI, 0)}%`;
+  let wkBig: string, wkPool: PoolKey;
+  if (coastal) {
+    if (ps >= 6) { wkBig = 'BORA'; wkPool = 'praiaBora'; }
+    else if (ps >= 3) { wkBig = 'DÁ PRA ARRISCAR'; wkPool = 'praiaArr'; }
+    else { wkBig = 'FICA EM CASA'; wkPool = 'praiaCasa'; }
+  } else {
+    if (ps >= 6) { wkBig = 'BORA'; wkPool = 'outBora'; }
+    else if (ps >= 3) { wkBig = 'DÁ PRA ARRISCAR'; wkPool = 'outArr'; }
+    else { wkBig = 'MELHOR EM CASA'; wkPool = 'outCasa'; }
+  }
+  const wkQ = coastal ? 'Posso ir à praia no fds?' : 'Rola um rolê ao ar livre no fds?';
+  const wkIcon = coastal ? '🏖️' : '🌳';
+  const wkAccent = coastal ? '#0EA5A5' : '#14A06B';
+  const wkMeta = `${DIA[dow(times[praiaI])]} · ${r(num(dl.temperature_2m_max, praiaI, 25))}° · ${num(dl.precipitation_probability_max, praiaI, 0)}%`;
 
   // --- 3. Churrasco fds ---
   let churI = wk[0];
@@ -154,14 +169,14 @@ export function buildView(city: City, d: Forecast, phrases: ZePhraseSet = {}): B
   const wkFactor = dWeekend === 0 ? 1 : dWeekend <= 2 ? 0.85 : 0.62;
 
   const relRain = rainBig === 'VAI SIM' ? 92 : rainBig === 'TALVEZ' ? 74 : 48;
-  const relPraia = (ps >= 6 ? 86 : ps >= 3 ? 64 : 46) * wkFactor;
+  const relWk = (ps >= 6 ? 86 : ps >= 3 ? 64 : 46) * wkFactor;
   const relCasaco = appMin < 14 ? 90 : appMin <= 18 ? 66 : 28;
   const relChur = (churBig === 'ACENDE A GRELHA' ? 80 : churBig === 'PLANO B' ? 60 : 50) * wkFactor;
   const relUv = uv >= 8 ? 90 : uv >= 6 ? 70 : uv >= 3 ? 46 : 22;
 
   const allCards: VerdictCardData[] = [
     { key: 'chover', icon: '🌧️', q: 'Vai chover amanhã?', big: rainBig, ze: ze(rainPool), meta: rainMeta, accent: '#2E7BD6', rel: relRain },
-    { key: 'praia', icon: '🏖️', q: 'Posso ir à praia no fds?', big: praiaBig, ze: ze(praiaPool), meta: praiaMeta, accent: '#0EA5A5', rel: relPraia },
+    { key: 'praia', icon: wkIcon, q: wkQ, big: wkBig, ze: ze(wkPool), meta: wkMeta, accent: wkAccent, rel: relWk },
     { key: 'casaco', icon: '🧥', q: 'Preciso de casaco hoje?', big: casBig, ze: ze(casPool), meta: casMeta, accent: '#6366F1', rel: relCasaco },
     { key: 'churrasco', icon: '🍖', q: 'Rola um churrasco no fds?', big: churBig, ze: ze(churPool), meta: churMeta, accent: '#E8590C', rel: relChur },
     { key: 'protetor', icon: '🧴', q: 'Tenho que passar protetor?', big: uvBig, ze: ze(uvPool), meta: uvMeta, accent: '#F59E0B', rel: relUv },
@@ -177,7 +192,9 @@ export function buildView(city: City, d: Forecast, phrases: ZePhraseSet = {}): B
   const ufFull = city.uf ? `${city.n} (${city.uf})` : city.n;
   const rainTodayTxt = probToday >= 60 ? 'com boa chance de chuva' : probToday >= 30 ? 'com a chuva rondando' : 'sem grande risco de chuva';
   const amanhaTxt = rainBig === 'VAI SIM' ? 'a chuva chega com tudo' : rainBig === 'TALVEZ' ? 'o tempo fica indeciso' : 'o sol deve predominar';
-  const fdsTxt = praiaBig === 'BORA' ? 'dá pra curtir a praia' : praiaBig === 'DÁ PRA ARRISCAR' ? 'dá pra arriscar uma praia' : 'é melhor ficar por perto';
+  const fdsTxt = coastal
+    ? (wkBig === 'BORA' ? 'dá pra curtir a praia' : wkBig === 'DÁ PRA ARRISCAR' ? 'dá pra arriscar uma praia' : 'é melhor ficar por perto')
+    : (wkBig === 'BORA' ? 'dá pra curtir um programa ao ar livre' : wkBig === 'DÁ PRA ARRISCAR' ? 'dá pra arriscar um rolê ao ar livre' : 'é melhor um programa em casa');
   const churTxt = churBig === 'ACENDE A GRELHA' ? 'pode acender a grelha' : churBig === 'PLANO B' ? 'tenha um plano B pro churrasco' : 'o churrasco fica melhor na garagem';
   const uvTxt = uv >= 8 ? 'muito alto — capriche no protetor' : uv >= 6 ? 'alto, vale o protetor' : uv >= 3 ? 'moderado' : 'baixo';
 
@@ -191,7 +208,7 @@ export function buildView(city: City, d: Forecast, phrases: ZePhraseSet = {}): B
   const faqs = [
     { q: `Vai chover amanhã em ${city.n}?`, a: `Para amanhã, a chance de chuva é de ${prob1}% com previsão de ${r(sum1)}mm. Resumindo: ${rainBig.toLowerCase()}. ${ze(rainPool)}` },
     { q: `Faz frio hoje em ${city.n}?`, a: `A mínima da sensação térmica hoje é de cerca de ${r(appMin)}°C. Veredito do casaco: ${casBig.toLowerCase()}. ${ze(casPool)}` },
-    { q: `Dá pra ir à praia neste fim de semana em ${city.n}?`, a: `O melhor dia do fim de semana é ${DIA[dow(times[praiaI])]}, com máxima de ${r(num(dl.temperature_2m_max, praiaI, 25))}°C e ${num(dl.precipitation_probability_max, praiaI, 0)}% de chuva. Veredito: ${praiaBig.toLowerCase()}.` },
+    { q: coastal ? `Dá pra ir à praia neste fim de semana em ${city.n}?` : `Dá pra fazer um programa ao ar livre neste fim de semana em ${city.n}?`, a: `O melhor dia do fim de semana é ${DIA[dow(times[praiaI])]}, com máxima de ${r(num(dl.temperature_2m_max, praiaI, 25))}°C e ${num(dl.precipitation_probability_max, praiaI, 0)}% de chuva. Veredito: ${wkBig.toLowerCase()}.` },
     { q: `Qual o índice UV hoje em ${city.n}?`, a: `O índice UV máximo previsto é ${r(uv)} (${uvTxt}). ${ze(uvPool)}` },
   ];
 

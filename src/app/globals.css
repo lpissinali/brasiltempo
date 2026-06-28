@@ -44,6 +44,59 @@ a {
   box-shadow: var(--card-shadow);
 }
 
+/* Long-form prose for blog + legal pages. Semantic HTML in, readable + indexable
+   typography out, no inline-style clutter in the content itself. */
+.article {
+  max-width: 720px;
+}
+.article > p,
+.article > ul,
+.article > ol,
+.article > blockquote {
+  font: 500 16px/1.75 var(--jakarta);
+  color: #344256;
+  margin: 0 0 18px;
+}
+.article h2 {
+  font: 800 24px/1.25 var(--jakarta);
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin: 34px 0 12px;
+}
+.article h3 {
+  font: 700 18px/1.3 var(--jakarta);
+  color: var(--ink);
+  margin: 24px 0 8px;
+}
+.article ul,
+.article ol {
+  padding-left: 22px;
+}
+.article li {
+  margin: 0 0 8px;
+}
+.article strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+.article a {
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.article blockquote {
+  border-left: 3px solid var(--blue);
+  padding: 4px 0 4px 16px;
+  color: var(--muted);
+  font-style: italic;
+}
+.article .lead {
+  font-size: 18px;
+  line-height: 1.7;
+  color: #2b3848;
+}
+
 .ztscroll::-webkit-scrollbar {
   height: 6px;
 }

@@ -11,6 +11,7 @@ import { offsetHoursForZone } from '@/lib/tz';
 import { VerdictGrid } from '@/components/VerdictCard';
 import { FreeQuestionBox } from '@/components/FreeQuestionBox';
 import { AgoraCard, RainAlert, ProximasHoras, ResumoZe, SevenDay, AstroGrid, Faq, H2, SectionLabel } from '@/components/WeatherSections';
+import { JsonLd, breadcrumbSchema, faqSchema } from '@/components/JsonLd';
 
 // Reads searchParams (for searched cities) → dynamic SSR. Data is still cached
 // server-side (30 min) so ERDDAP isn't hit per visitor.
@@ -48,11 +49,26 @@ async function resolveCity(slug: string, sp: SP): Promise<City | null> {
 
 export async function generateMetadata({ params, searchParams }: { params: { slug: string }; searchParams: SP }): Promise<Metadata> {
   const city = await resolveCity(params.slug, searchParams);
-  if (!city) return { title: 'Cidade não encontrada — BrasilTempo' };
+  if (!city) return { title: 'Cidade não encontrada — BrasilTempo', robots: { index: false, follow: false } };
   const place = city.uf ? `${city.n}, ${city.uf}` : city.n;
   const title = `Tempo em ${place} — BrasilTempo`;
   const description = `Previsão do tempo em ${city.n} hoje e nos próximos dias: vai chover? dá praia? precisa de casaco? O Zé do Tempo responde, ancorado em dados NOAA GFS.`;
-  return { title, description, openGraph: { title, description, locale: 'pt_BR', type: 'article' } };
+  // Canonical drops any query params (lat/lon/tz used for shared/searched links)
+  // so the param-free city URL is the single indexable version.
+  const canonical = `/cidade/${params.slug}`;
+  // Only the curated cities (the ones in the sitemap) are indexable. Long-tail
+  // searched cities still render and work for users / shared links, but are
+  // noindex,follow so Google doesn't index thousands of thin variants
+  // (scaled-content-abuse guard). "follow" lets crawlers still reach the curated
+  // pages linked from here.
+  const curated = getCityBySlug(params.slug);
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    robots: curated ? undefined : { index: false, follow: true },
+    openGraph: { title, description, url: canonical, locale: 'pt_BR', type: 'article' },
+  };
 }
 
 export default async function CidadePage({ params, searchParams }: { params: { slug: string }; searchParams: SP }) {
@@ -70,8 +86,19 @@ export default async function CidadePage({ params, searchParams }: { params: { s
   const v = buildView(city, forecast, phrases);
   const place = city.uf ? `${city.n}, ${city.uf}` : city.n;
 
+  // Structured data, all anchored to what's rendered below (breadcrumb + the
+  // same data-driven FAQs the user sees).
+  const schema = [
+    breadcrumbSchema([
+      { name: 'Início', path: '/' },
+      { name: `Tempo em ${place}`, path: `/cidade/${params.slug}` },
+    ]),
+    faqSchema(v.faqs),
+  ];
+
   return (
     <main className="container">
+      <JsonLd data={schema} />
       <Link href="/" style={{ font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>
         ← Voltar pro Zé
       </Link>

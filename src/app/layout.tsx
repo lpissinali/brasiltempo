@@ -3,7 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { Logo, Wordmark } from '@/components/Logo';
-import { CITIES } from '@/lib/cities';
+import { POPULAR } from '@/lib/cities';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
@@ -33,13 +33,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   );
 }
 
-const PERGUNTAS = [
-  { label: 'Vai chover amanhã?', href: '/' },
-  { label: 'Praia no fds', href: '/' },
-  { label: 'Casaco hoje', href: '/' },
-  { label: 'Churrasco fds', href: '/' },
-  { label: 'Estender a roupa', href: '/' },
-  { label: 'Protetor hoje', href: '/' },
+const INSTITUCIONAL = [
+  { label: 'Blog', href: '/blog' },
+  { label: 'Política de Privacidade', href: '/privacidade' },
+  { label: 'Política de Cookies', href: '/cookies' },
+  { label: 'Termos de Uso', href: '/termos' },
 ];
 
 function Footer() {
@@ -48,26 +46,26 @@ function Footer() {
   return (
     <footer style={{ background: 'var(--ink)', color: '#9fb2c8', marginTop: 40 }}>
       <div style={{ maxWidth: 1040, margin: '0 auto', padding: '32px 18px 20px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 24 }}>
           <div>
             <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
               <Logo size={28} />
               <Wordmark light size={17} />
             </Link>
-            <p style={{ font: '500 13px/1.6 var(--jakarta)', color: '#9fb2c8', marginTop: 12, maxWidth: 220 }}>
+            <p style={{ font: '500 13px/1.6 var(--jakarta)', color: '#9fb2c8', marginTop: 12, maxWidth: 240 }}>
               O oráculo do tempo que fala a sua língua. Pergunta da vida real, resposta direta — sempre ancorada em dado de verdade.
             </p>
           </div>
           <div>
-            <div style={col}>Perguntas</div>
-            {PERGUNTAS.map((p) => (
-              <Link key={p.label} href={p.href} style={item}>{p.label}</Link>
+            <div style={col}>Cidades populares</div>
+            {POPULAR.map((c) => (
+              <Link key={c.slug} href={`/cidade/${c.slug}`} style={item}>{c.n} · {c.uf}</Link>
             ))}
           </div>
           <div>
-            <div style={col}>Cidades</div>
-            {CITIES.map((c) => (
-              <Link key={c.slug} href={`/cidade/${c.slug}`} style={item}>{c.n} · {c.uf}</Link>
+            <div style={col}>Institucional</div>
+            {INSTITUCIONAL.map((p) => (
+              <Link key={p.href} href={p.href} style={item}>{p.label}</Link>
             ))}
           </div>
           <div>

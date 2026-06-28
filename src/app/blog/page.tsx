@@ -1,19 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { POSTS, formatDate } from '@/lib/posts';
 
 export const metadata: Metadata = {
   title: 'Blog — BrasilTempo',
-  description: 'O tempo explicado sem complicar — dicas, bastidores dos vereditos e curiosidades meteorológicas no jeitão do Zé.',
+  description:
+    'O tempo explicado sem complicar — dicas, bastidores dos vereditos e curiosidades meteorológicas no jeitão do Zé. Como ler a chuva, o índice UV e a previsão de 7 dias.',
+  alternates: { canonical: '/blog' },
 };
-
-// Placeholder for the content/SEO engine described in the brief (§3.3).
-// Real posts (data-anchored, genuinely useful) come later — generated/cached
-// on a schedule, never spam.
-const POSTS = [
-  { title: 'Como o Zé decide se vai chover', tag: 'Bastidores', resumo: 'Os critérios por trás de cada veredito, em português claro.' },
-  { title: 'O que é índice UV e quando se preocupar', tag: 'Saúde', resumo: 'Do "relaxa" ao "passa agora": o que os números do sol querem dizer.' },
-  { title: 'Dá pra confiar na previsão de 7 dias?', tag: 'Curiosidade', resumo: 'Por que o tempo de hoje é mais certo que o de sábado.' },
-];
 
 export default function BlogPage() {
   return (
@@ -31,14 +25,16 @@ export default function BlogPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 24 }}>
         {POSTS.map((p) => (
-          <div key={p.title} className="card" style={{ padding: 18 }}>
+          <Link key={p.slug} href={`/blog/${p.slug}`} className="card" style={{ padding: 18, display: 'block' }}>
             <span style={{ font: '700 11px var(--jakarta)', letterSpacing: '.05em', textTransform: 'uppercase', color: 'var(--blue)' }}>
               {p.tag}
             </span>
-            <div style={{ font: '800 18px var(--jakarta)', color: 'var(--ink)', margin: '6px 0 4px' }}>{p.title}</div>
-            <p style={{ font: '500 14px/1.6 var(--jakarta)', color: '#3a4658' }}>{p.resumo}</p>
-            <span style={{ font: '600 13px var(--jakarta)', color: 'var(--muted-2)' }}>Em breve · Por Zé do Tempo</span>
-          </div>
+            <div style={{ font: '800 18px/1.3 var(--jakarta)', color: 'var(--ink)', margin: '6px 0 4px' }}>{p.title}</div>
+            <p style={{ font: '500 14px/1.6 var(--jakarta)', color: '#3a4658' }}>{p.description}</p>
+            <span style={{ font: '600 13px var(--jakarta)', color: 'var(--muted-2)' }}>
+              {formatDate(p.date)} · {p.readingMin} min · Por Zé do Tempo
+            </span>
+          </Link>
         ))}
       </div>
 

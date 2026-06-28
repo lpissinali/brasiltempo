@@ -22,6 +22,7 @@ import { anthropicText, extractJsonObject, brDayKey } from './anthropic';
 export type PoolKey =
   | 'rainSim' | 'rainTalvez' | 'rainNao'
   | 'praiaBora' | 'praiaArr' | 'praiaCasa'
+  | 'outBora' | 'outArr' | 'outCasa'
   | 'casSim' | 'casTalvez' | 'casNao'
   | 'churAcende' | 'churB' | 'churDentro'
   | 'uvAgora' | 'uvSim' | 'uvRec' | 'uvRelaxa'
@@ -34,6 +35,9 @@ export const POOLS: Record<PoolKey, string[]> = {
   praiaBora: ['Bota o protetor e some pra areia, cumpadi.', 'Dia de mar! Deixa a cerveja gelando.', 'Areia te espera. Bora que bora!'],
   praiaArr: ['Dá praia, mas leva plano B na mochila.', 'Vai com fé, mas de olho no céu.', 'Arrisca um mergulho, mas não confia 100%.'],
   praiaCasa: ['Praia não, sofá sim. O mar que espere.', 'Fim de semana é de Netflix, não de areia.', 'Guarda o biquíni, hoje não rola.'],
+  outBora: ['Dia perfeito pra rua: bota o tênis e some.', 'Tempo de parque e sorvete, bora aproveitar!', 'Céu colaborando: rolê ao ar livre liberado.'],
+  outArr: ['Dá pra sair, mas leva um plano B na mochila.', 'Rolê ao ar livre vai, mas de olho no céu.', 'Arrisca um programa lá fora, sem confiar 100%.'],
+  outCasa: ['Hoje o céu pede sofá e série, relaxa.', 'Programa de rua não, fica no sequinho de casa.', 'Melhor um rolê indoor, lá fora tá osso.'],
   casSim: ['Tá frio de renegar sorvete. Casaco pesado!', 'Hoje é dia de casacão e chocolate quente.', 'Frio brabo: agasalha que nem cebola.'],
   casTalvez: ['Leva um casaquinho, vai que esfria na volta.', 'Um agasalho leve resolve o seu dia.', 'Casaquinho na mochila e tá tranquilo.'],
   casNao: ['Casaco? Só se for de preguiça. Tá gostoso.', 'Pode sair de regata, o dia colabora.', 'Esquenta nada, deixa o casaco em casa.'],
@@ -85,6 +89,9 @@ const POOL_BRIEF: Record<PoolKey, string> = {
   praiaBora: 'fim de semana perfeito pra praia',
   praiaArr: 'praia no fds dá pra arriscar, mas com ressalva',
   praiaCasa: 'fim de semana ruim pra praia, melhor ficar em casa',
+  outBora: 'fim de semana ótimo pra um rolê ao ar livre',
+  outArr: 'rolê ao ar livre no fds dá pra arriscar, mas com ressalva',
+  outCasa: 'fim de semana ruim pra sair, melhor um programa em casa',
   casSim: 'frio hoje, precisa de casaco',
   casTalvez: 'friozinho leve, um casaquinho resolve',
   casNao: 'sem frio, não precisa de casaco',

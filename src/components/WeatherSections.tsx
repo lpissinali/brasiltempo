@@ -282,40 +282,62 @@ export function SummaryCard({ v }: { v: BuiltView }) {
   );
 }
 
+// 7-day forecast — deliberately a calm vertical LIST (one row per day) so it
+// reads differently from the horizontal "Próximas horas" strip above it. Each
+// row carries a min→max temperature range bar (scaled to the week's own range)
+// so the whole week's trend is legible at a glance.
 export function SevenDay({ v }: { v: BuiltView }) {
   if (!v.days.length) return null;
+  const weekMin = Math.min(...v.days.map((d) => d.min));
+  const weekMax = Math.max(...v.days.map((d) => d.max));
+  const span = weekMax - weekMin || 1;
   return (
     <>
       <SectionLabel>Previsão para os próximos 7 dias</SectionLabel>
-      <div className="ztscroll" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8 }}>
+      <div className="card" style={{ padding: '6px 6px', display: 'flex', flexDirection: 'column' }}>
         {v.days.map((d, i) => {
           const today = i === 0;
+          const a1 = tempAccent(d.min);
+          const a2 = tempAccent(d.max);
+          const left = ((d.min - weekMin) / span) * 100;
+          const width = Math.max(8, ((d.max - d.min) / span) * 100);
+          const rainy = d.prob >= 40;
           return (
             <div
               key={i}
               style={{
-                flex: 'none',
-                width: 88,
-                padding: '14px 10px 12px',
-                textAlign: 'center',
-                borderRadius: 16,
-                background: today ? 'linear-gradient(160deg, #2E7BD6 0%, #2563b6 100%)' : '#fff',
-                color: today ? '#fff' : 'var(--ink)',
-                boxShadow: today ? '0 10px 22px rgba(46,123,214,.34)' : 'var(--card-shadow)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '11px 12px',
+                borderRadius: 11,
+                background: today ? '#eaf2fc' : 'transparent',
+                borderTop: i === 0 ? 'none' : '1px solid #eef3f8',
               }}
             >
-              <div style={{ font: '700 12px var(--jakarta)', color: today ? 'rgba(255,255,255,.9)' : 'var(--muted)' }}>
+              <div style={{ width: 46, flex: 'none', font: `800 13px var(--jakarta)`, color: today ? 'var(--blue)' : 'var(--ink)' }}>
                 {today ? 'Hoje' : d.dn}
               </div>
-              <div style={{ fontSize: 26, margin: '8px 0 6px' }}>{d.emoji}</div>
-              <div style={{ font: '800 16px var(--jakarta)' }}>{d.max}°</div>
-              <div style={{ font: '600 12px var(--jakarta)', color: today ? 'rgba(255,255,255,.82)' : '#aab4c2', marginTop: 1 }}>{d.min}°</div>
-              <div style={{ marginTop: 9 }}>
-                <div style={{ height: 4, borderRadius: 99, background: today ? 'rgba(255,255,255,.28)' : '#e6eef7', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.max(3, d.prob)}%`, borderRadius: 99, background: today ? '#fff' : 'var(--blue)' }} />
-                </div>
-                <div style={{ font: '700 10px var(--jakarta)', color: today ? 'rgba(255,255,255,.92)' : 'var(--blue)', marginTop: 5 }}>{d.prob}%</div>
+              <div style={{ fontSize: 22, width: 26, flex: 'none', textAlign: 'center' }}>{d.emoji}</div>
+              <div style={{ width: 60, flex: 'none', display: 'flex', alignItems: 'center', gap: 4, font: '700 11px var(--jakarta)', color: rainy ? 'var(--blue)' : '#c2ccd9' }}>
+                <span style={{ fontSize: 11 }}>💧</span>{d.prob}%
               </div>
+              <div style={{ width: 34, flex: 'none', textAlign: 'right', font: '600 13px var(--jakarta)', color: 'var(--muted-2)' }}>{d.min}°</div>
+              <div style={{ flex: 1, position: 'relative', height: 8, minWidth: 60 }}>
+                <div style={{ position: 'absolute', inset: 0, borderRadius: 99, background: '#eef3f8' }} />
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: `${left}%`,
+                    width: `${width}%`,
+                    borderRadius: 99,
+                    background: `linear-gradient(90deg, ${a1.c}, ${a2.c})`,
+                  }}
+                />
+              </div>
+              <div style={{ width: 34, flex: 'none', font: '800 14px var(--jakarta)', color: 'var(--ink)' }}>{d.max}°</div>
             </div>
           );
         })}
