@@ -164,7 +164,15 @@ function normalize(city: City, steps: Step[]): Forecast {
     if (!byDay.has(s.localDate)) byDay.set(s.localDate, []);
     byDay.get(s.localDate)!.push(s);
   }
-  const dates = Array.from(byDay.keys()).sort();
+  // The GFS window opens at UTC-midnight, which in Brazil's tz (-3/-4) is still
+  // *yesterday* evening locally — so the first grouped local date is a partial
+  // yesterday. Drop any day before today (city-local) so daily[0] is really
+  // today: this fixes collapsed today max/min, the "amanhã" rain reading
+  // daily[1], the weekend indices, and the day-of-week labels.
+  const todayLocal = localDateString(now, city.tz);
+  let dates = Array.from(byDay.keys()).sort();
+  const fromToday = dates.filter((d) => d >= todayLocal);
+  if (fromToday.length) dates = fromToday;
 
   const daily: DailyWeather = {
     time: [],

@@ -283,39 +283,161 @@ export function SummaryCard({ v }: { v: BuiltView }) {
 }
 
 export function SevenDay({ v }: { v: BuiltView }) {
+  if (!v.days.length) return null;
   return (
     <>
-      <H2>Previsão para os próximos 7 dias</H2>
+      <SectionLabel>Previsão para os próximos 7 dias</SectionLabel>
       <div className="ztscroll" style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8 }}>
-        {v.days.map((d, i) => (
-          <div key={i} className="card" style={{ flex: 'none', width: 84, padding: '13px 10px', textAlign: 'center' }}>
-            <div style={{ font: '700 12px var(--jakarta)', color: 'var(--muted)' }}>{d.dn}</div>
-            <div style={{ fontSize: 24, margin: '7px 0' }}>{d.emoji}</div>
-            <div style={{ font: '800 15px var(--jakarta)', color: 'var(--ink)' }}>{d.max}°</div>
-            <div style={{ font: '600 12px var(--jakarta)', color: '#aab4c2' }}>{d.min}°</div>
-            <div style={{ font: '700 11px var(--jakarta)', color: 'var(--blue)', marginTop: 4 }}>{d.prob}%</div>
-          </div>
-        ))}
+        {v.days.map((d, i) => {
+          const today = i === 0;
+          return (
+            <div
+              key={i}
+              style={{
+                flex: 'none',
+                width: 88,
+                padding: '14px 10px 12px',
+                textAlign: 'center',
+                borderRadius: 16,
+                background: today ? 'linear-gradient(160deg, #2E7BD6 0%, #2563b6 100%)' : '#fff',
+                color: today ? '#fff' : 'var(--ink)',
+                boxShadow: today ? '0 10px 22px rgba(46,123,214,.34)' : 'var(--card-shadow)',
+              }}
+            >
+              <div style={{ font: '700 12px var(--jakarta)', color: today ? 'rgba(255,255,255,.9)' : 'var(--muted)' }}>
+                {today ? 'Hoje' : d.dn}
+              </div>
+              <div style={{ fontSize: 26, margin: '8px 0 6px' }}>{d.emoji}</div>
+              <div style={{ font: '800 16px var(--jakarta)' }}>{d.max}°</div>
+              <div style={{ font: '600 12px var(--jakarta)', color: today ? 'rgba(255,255,255,.82)' : '#aab4c2', marginTop: 1 }}>{d.min}°</div>
+              <div style={{ marginTop: 9 }}>
+                <div style={{ height: 4, borderRadius: 99, background: today ? 'rgba(255,255,255,.28)' : '#e6eef7', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.max(3, d.prob)}%`, borderRadius: 99, background: today ? '#fff' : 'var(--blue)' }} />
+                </div>
+                <div style={{ font: '700 10px var(--jakarta)', color: today ? 'rgba(255,255,255,.92)' : 'var(--blue)', marginTop: 5 }}>{d.prob}%</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </>
   );
 }
 
+// A moon drawn to its real illuminated fraction. Built from a dark disk (the
+// shadow), a lit half-disk on the bright limb, and a terminator ellipse that is
+// lit for a gibbous moon or dark for a crescent. The bright limb flips by
+// hemisphere so it matches what you actually see in the sky (Brazil = south).
+function MoonSVG({ illum, waxing, southern, size = 92 }: { illum: number; waxing: boolean; southern: boolean; size?: number }) {
+  const R = size / 2 - 3;
+  const c = size / 2;
+  const f = Math.max(0, Math.min(1, illum / 100));
+  const litRight = waxing !== southern; // waxing moon is lit on the left in the south
+  const LIT = '#F4EFDD';
+  const DARK = '#222f43';
+  const absA = Math.abs(R * (1 - 2 * f)); // terminator x-radius
+  const halfSweep = litRight ? 1 : 0;
+  const halfPath = `M ${c} ${c - R} A ${R} ${R} 0 0 ${halfSweep} ${c} ${c + R} Z`;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flex: 'none' }} aria-hidden="true">
+      <circle cx={c} cy={c} r={R} fill={DARK} />
+      <path d={halfPath} fill={LIT} />
+      <ellipse cx={c} cy={c} rx={absA} ry={R} fill={f > 0.5 ? LIT : DARK} />
+      <circle cx={c} cy={c} r={R} fill="none" stroke="rgba(22,32,43,.18)" strokeWidth={1} />
+    </svg>
+  );
+}
+
+// Small sunrise/sunset glyph: a sun over a horizon line with an up/down arrow.
+function SunHorizonIcon({ dir, size = 22 }: { dir: 'up' | 'down'; size?: number }) {
+  const col = dir === 'up' ? '#F59E0B' : '#E8590C';
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flex: 'none' }}>
+      <line x1="3" y1="19" x2="21" y2="19" stroke={col} strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M7 19a5 5 0 0 1 10 0" fill={col} fillOpacity="0.18" stroke={col} strokeWidth="1.6" strokeLinejoin="round" />
+      {dir === 'up' ? (
+        <path d="M12 3v6M9.5 5.5L12 3l2.5 2.5" stroke={col} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      ) : (
+        <path d="M12 9V3M9.5 6.5L12 9l2.5-2.5" stroke={col} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+    </svg>
+  );
+}
+
+function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+      <span style={{ width: 30, height: 30, flex: 'none', borderRadius: 9, background: '#F1F6FB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
+      <div>
+        <div style={{ font: '600 11px var(--jakarta)', color: 'var(--muted-2)' }}>{label}</div>
+        <div style={{ font: '800 17px var(--jakarta)', color: 'var(--ink)' }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
 export function AstroGrid({ v }: { v: BuiltView }) {
+  const southern = v.city.lat < 0;
+  const deltaColor = v.sky.dayDeltaDir === 'longer' ? '#0EA5A5' : v.sky.dayDeltaDir === 'shorter' ? '#E8590C' : 'var(--muted-2)';
+  const deltaArrow = v.sky.dayDeltaDir === 'longer' ? '▲' : v.sky.dayDeltaDir === 'shorter' ? '▼' : '•';
+  const tw = v.sky.twilight;
+  const twRows: [string, string, string][] = [
+    ['Civil', tw.civilDawn, tw.civilDusk],
+    ['Náutico', tw.nauticalDawn, tw.nauticalDusk],
+    ['Astronômico', tw.astroDawn, tw.astroDusk],
+  ];
   return (
     <>
       <H2>Céu &amp; Lua em {v.cidade}</H2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-        {v.astro.map((a, i) => (
-          <div key={i} className="card" style={{ padding: 15, display: 'flex', alignItems: 'center', gap: 13 }}>
-            <span style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', background: '#F1F6FB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 21 }}>{a.icon}</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
+        {/* Moon */}
+        <div className="card" style={{ padding: 18, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <MoonSVG illum={v.moon.illum} waxing={v.moon.waxing} southern={southern} size={96} />
             <div style={{ minWidth: 0 }}>
-              <div style={{ font: '600 12px var(--jakarta)', color: 'var(--muted-2)' }}>{a.label}</div>
-              <div style={{ font: '800 18px var(--jakarta)', color: 'var(--ink)' }}>{a.value}</div>
-              <div style={{ font: '600 11px var(--jakarta)', color: '#aab4c2' }}>{a.sub}</div>
+              <div style={{ font: '700 11px var(--jakarta)', letterSpacing: '.05em', textTransform: 'uppercase', color: 'var(--muted-2)' }}>Fase da lua</div>
+              <div style={{ font: '800 22px var(--jakarta)', color: 'var(--ink)', letterSpacing: '-.01em', marginTop: 2 }}>{v.moon.name}</div>
+              <div style={{ font: '600 13px var(--jakarta)', color: '#3a4658', marginTop: 4 }}>{v.moon.illum}% iluminada</div>
+              <div style={{ display: 'inline-block', marginTop: 8, font: '700 11px var(--jakarta)', color: '#6366F1', background: '#6366F114', padding: '3px 9px', borderRadius: 999 }}>
+                {v.moon.waxing ? 'Crescendo' : 'Minguando'} · {v.moon.ageDays} dias
+              </div>
             </div>
           </div>
-        ))}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16, paddingTop: 14, borderTop: '1px solid #eef3f8' }}>
+            <MiniStat icon={<span style={{ fontSize: 16 }}>🌝</span>} label="Nascer da lua" value={v.moon.moonrise} />
+            <MiniStat icon={<span style={{ fontSize: 16 }}>🌚</span>} label="Pôr da lua" value={v.moon.moonset} />
+          </div>
+        </div>
+
+        {/* Sun + day length + twilight */}
+        <div className="card" style={{ padding: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <MiniStat icon={<SunHorizonIcon dir="up" />} label="Nascer do sol" value={v.sky.sunrise} />
+            <MiniStat icon={<SunHorizonIcon dir="down" />} label="Pôr do sol" value={v.sky.sunset} />
+          </div>
+
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #eef3f8' }}>
+            <span style={{ font: '600 13px var(--jakarta)', color: '#3a4658' }}>
+              Dia com <strong style={{ color: 'var(--ink)' }}>{v.sky.dayLength}</strong> de luz
+            </span>
+            <div style={{ font: '700 12px var(--jakarta)', color: deltaColor, marginTop: 3 }}>
+              {deltaArrow} Amanhã será {v.sky.dayDeltaText}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #eef3f8' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 58px 58px', columnGap: 12, alignItems: 'baseline' }}>
+              <span style={{ font: '700 10px var(--jakarta)', letterSpacing: '.05em', textTransform: 'uppercase', color: '#aab4c2' }}>Crepúsculo</span>
+              <span style={{ font: '700 10px var(--jakarta)', letterSpacing: '.04em', textTransform: 'uppercase', color: '#aab4c2', textAlign: 'right' }}>Alvorada</span>
+              <span style={{ font: '700 10px var(--jakarta)', letterSpacing: '.04em', textTransform: 'uppercase', color: '#aab4c2', textAlign: 'right' }}>Anoitecer</span>
+              {twRows.flatMap(([label, dawn, dusk]) => [
+                <span key={`${label}-l`} style={{ font: '600 12px var(--jakarta)', color: 'var(--muted-2)', paddingTop: 7 }}>{label}</span>,
+                <span key={`${label}-a`} style={{ font: '700 12px var(--jakarta)', color: 'var(--ink)', textAlign: 'right', paddingTop: 7 }}>{dawn}</span>,
+                <span key={`${label}-d`} style={{ font: '700 12px var(--jakarta)', color: 'var(--ink)', textAlign: 'right', paddingTop: 7 }}>{dusk}</span>,
+              ])}
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );

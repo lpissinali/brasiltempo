@@ -1,10 +1,17 @@
 // "Pergunta o que quiser pro Zé" — natural-language answers via Haiku.
 //
-// Unlike the verdict phrases (batched once per day), this is per submitted
-// question — but it's a deliberate user action (low volume vs page views), the
-// input is length-capped, and identical questions are cached per city/day in
-// Firestore. Returns null when no key / on any error, so the route falls back to
-// the keyword matcher. Haiku answers using ONLY the day's forecast context.
+// One Haiku call answers a free-form question using the day's forecast as
+// context, in Zé's voice. Two extra behaviours:
+//   - CITY REDIRECT: if the question is about a different place than the page's
+//     city, the model returns {city:"..."} instead of an answer; the route then
+//     geocodes it, fetches that city's forecast, and re-asks (no further
+//     redirect). When no place is named, the page's city is used.
+//   - OFF-TOPIC: non-weather questions still get a playful Zé answer that nudges
+//     back to the weather.
+//
+// Caching + geocoding orchestration live in the route; this module is just the
+// Haiku call(s) + the answer cache helpers. Returns null when no key / on error
+// so the route can fall back to the keyword matcher.
 
 import type { BuiltView } from './verdicts';
 import { anthropicText, extractJsonObject, brDayKey } from './anthropic';
@@ -14,11 +21,18 @@ export interface ZeAnswer {
   verdict: string;
   ze: string;
   meta: string;
+  offtopic?: boolean; // true when the question isn't about the weather
 }
+
+export type AskResult = ({ kind: 'answer' } & ZeAnswer) | { kind: 'city'; city: string };
 
 const ANSWER_COLLECTION = 'zeAnswers';
 const DAY_TTL_MS = 26 * 60 * 60 * 1000;
 const MAX_Q = 200;
+
+function normalize(question: string): string {
+  return question.trim().replace(/\s+/g, ' ').slice(0, MAX_Q);
+}
 
 // djb2 — short, stable id for the (question) part of the cache key.
 function hash(s: string): string {
@@ -27,51 +41,91 @@ function hash(s: string): string {
   return h.toString(36);
 }
 
+// Trim to a max length without cutting a word in half.
+function clip(s: string, n: number): string {
+  if (s.length <= n) return s;
+  const cut = s.slice(0, n);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > 40 ? cut.slice(0, sp) : cut).trimEnd() + '…';
+}
+
 function buildContext(v: BuiltView): string {
   const hrs = v.hours.map((h) => `${h.hour} ${h.temp}° ${h.prob}%`).join('; ');
+  const dias = v.days.map((dia) => `${dia.dn} ${dia.prob}%`).join('; ');
   const verds = v.allCards.map((c) => `- ${c.q} ${c.big} (${c.meta})`).join('\n');
+  const janela = v.rainAlert
+    ? `Janela de chuva hoje: ${v.rainAlert.title}.`
+    : 'Sem janela de chuva significativa hoje.';
   return [
     `Cidade: ${v.cidade}`,
     `Agora: ${v.temp}°C (sensação ${v.feels}°), ${v.skyLabel}, umidade ${v.humidity}%, vento ${v.windKmh} km/h, UV ${v.uv}.`,
     `Hoje: máx ${v.maxToday}°, mín ${v.minToday}°, chance de chuva ${v.probToday}%.`,
+    janela,
     `Próximas horas (hora temp chuva%): ${hrs}`,
+    `Próximos dias (dia chuva%): ${dias}`,
     'Vereditos do dia:',
     verds,
   ].join('\n');
 }
 
-const SYSTEM =
+const PERSONA =
   'Você é o "Zé do Tempo", mascote brasileiro de previsão do tempo: bem-humorado, ' +
-  'caloroso, com gírias leves e tom de tiozão simpático. Responda à pergunta do ' +
-  'usuário usando SOMENTE os dados fornecidos. Se a pergunta citar um período ' +
-  '(manhã, tarde, noite, agora), baseie-se nas próximas horas. Nunca invente número ' +
-  'que não esteja nos dados. Responda SEMPRE só com JSON, sem markdown: ' +
-  '{"verdict":"veredito curto, 1 a 4 palavras, em MAIÚSCULAS","ze":"uma frase curta e ' +
-  'bem-humorada, máx ~80 caracteres, sem emoji","meta":"o dado que justifica, bem curto"}.';
+  'caloroso, com gírias leves e tom de tiozão simpático.';
 
-export async function askZe(question: string, view: BuiltView, scopeKey: string): Promise<ZeAnswer | null> {
+function systemPrompt(allowRedirect: boolean): string {
+  const base =
+    PERSONA +
+    ' Responda usando SOMENTE os dados fornecidos; nunca invente números. ' +
+    'Se a pergunta citar um período (manhã, tarde, noite, agora), use as próximas horas; ' +
+    'se citar "amanhã" ou dias da semana, use os próximos dias. ' +
+    'Se a pergunta NÃO for sobre o tempo, responda mesmo assim no seu estilo, com bom humor, ' +
+    'dando uma resposta leve e puxando de volta pro clima — e marque "offtopic": true. ' +
+    'Responda SEMPRE só com JSON, sem markdown: ' +
+    '{"verdict":"1 a 4 palavras em MAIÚSCULAS","ze":"frase curta e bem-humorada, máx ~90 caracteres, sem emoji",' +
+    '"meta":"um dado curto e concreto do tempo, ex.: \\"amanhã 28% de chuva\\" — se a pergunta não for sobre clima, deixe meta como string vazia \\"\\"",' +
+    '"offtopic": true se a pergunta não for sobre tempo/clima, caso contrário false}. Nunca escreva instruções dentro do JSON.';
+  const redirect =
+    ' MUITO IMPORTANTE: se a pergunta for claramente sobre uma CIDADE ou LUGAR diferente da ' +
+    'cidade dos dados acima, NÃO responda o clima — retorne só {"city":"<nome do lugar citado>"}.';
+  return allowRedirect ? base + redirect : base;
+}
+
+/** One Haiku call against a given city's view. May ask the route to switch city. */
+export async function askZeOnce(question: string, view: BuiltView, allowRedirect: boolean): Promise<AskResult | null> {
   if (!process.env.ANTHROPIC_API_KEY) return null;
-  const q = question.trim().replace(/\s+/g, ' ').slice(0, MAX_Q);
+  const q = normalize(question);
   if (!q) return null;
-
-  const docId = `${scopeKey}_${brDayKey()}_${hash(q.toLowerCase())}`;
-  const cached = await getCache<ZeAnswer>(ANSWER_COLLECTION, docId, DAY_TTL_MS);
-  if (cached) return cached;
 
   try {
     const user = `Pergunta do usuário: "${q}"\n\nDados:\n${buildContext(view)}`;
-    const obj = extractJsonObject(await anthropicText(SYSTEM, user, 300));
+    const obj = extractJsonObject(await anthropicText(systemPrompt(allowRedirect), user, 300));
     if (!obj) return null;
 
-    const verdict = typeof obj.verdict === 'string' ? obj.verdict.trim().slice(0, 40) : '';
-    const ze = typeof obj.ze === 'string' ? obj.ze.trim().replace(/^["']+|["']+$/g, '').slice(0, 140) : '';
-    const meta = typeof obj.meta === 'string' ? obj.meta.trim().slice(0, 60) : '';
-    if (!verdict || !ze) return null;
+    if (allowRedirect && typeof obj.city === 'string' && obj.city.trim() && typeof obj.verdict !== 'string') {
+      return { kind: 'city', city: obj.city.trim().slice(0, 80) };
+    }
 
-    const ans: ZeAnswer = { verdict, ze, meta };
-    await setCache(ANSWER_COLLECTION, docId, ans);
-    return ans;
+    const verdict = typeof obj.verdict === 'string' ? clip(obj.verdict.trim(), 40) : '';
+    const ze = typeof obj.ze === 'string' ? clip(obj.ze.trim().replace(/^["']+|["']+$/g, ''), 150) : '';
+    const meta = typeof obj.meta === 'string' ? clip(obj.meta.trim(), 70) : '';
+    const offtopic = obj.offtopic === true;
+    if (!verdict || !ze) return null;
+    return { kind: 'answer', verdict, ze, meta, offtopic };
   } catch {
     return null;
   }
+}
+
+function cacheId(scopeKey: string, question: string): string {
+  return `${scopeKey}_${brDayKey()}_${hash(normalize(question).toLowerCase())}`;
+}
+
+export async function getCachedAnswer(scopeKey: string, question: string): Promise<ZeAnswer | null> {
+  if (!normalize(question)) return null;
+  return getCache<ZeAnswer>(ANSWER_COLLECTION, cacheId(scopeKey, question), DAY_TTL_MS);
+}
+
+export async function setCachedAnswer(scopeKey: string, question: string, ans: ZeAnswer): Promise<void> {
+  if (!normalize(question)) return;
+  await setCache(ANSWER_COLLECTION, cacheId(scopeKey, question), ans);
 }

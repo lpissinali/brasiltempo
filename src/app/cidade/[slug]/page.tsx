@@ -83,25 +83,25 @@ export default async function CidadePage({ params, searchParams }: { params: { s
         Tempo em {place}
       </h1>
 
+      <FreeQuestionBox city={city} />
+
       <SectionLabel>Agora em {v.cidade}</SectionLabel>
       <AgoraCard v={v} />
       <RainAlert v={v} />
 
       <ProximasHoras v={v} />
 
+      <SevenDay v={v} />
+
       <ResumoZe v={v} />
 
       <H2>O veredito do Zé pra cada coisa</H2>
       <VerdictGrid cards={v.cards} />
 
-      <H2>Pergunta o que quiser</H2>
-      <FreeQuestionBox city={city} />
-
       <H2>Sobre o tempo em {city.n} hoje</H2>
       <p style={{ font: '500 15px/1.7 var(--jakarta)', color: '#3a4658' }}>{v.seoIntro}</p>
 
       <AstroGrid v={v} />
-      <SevenDay v={v} />
       <Faq v={v} />
 
       <p style={{ font: '500 12px var(--jakarta)', color: 'var(--muted-2)', marginTop: 24 }}>

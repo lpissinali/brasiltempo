@@ -78,3 +78,62 @@ and the redesigned widgets render with live NOAA data.
 
 ## Note
 Original design/spec: `BrasilTempo - standalone.html` (bundled prototype) and `vai-dar-brief.md`.
+
+---
+
+# UPDATE — Session 2 (June 2026). This supersedes "Status" / "Next steps" above.
+
+## Now LIVE & deployed (Firebase App Hosting, project `brasiltempo-75a7a`)
+- **Domain:** `brasiltempo.com.br` (apex canonical) + `www` → 301 → apex. Also on
+  `https://brasiltempo--brasiltempo-75a7a.us-central1.hosted.app`. Deploy:
+  `firebase deploy --only apphosting`. Config in `firebase.json`, `.firebaserc`, `apphosting.yaml`.
+- **Firestore cache (L2):** `src/lib/firestore.ts` — lazy firebase-admin (ADC in prod,
+  no-ops locally). `getForecast` is L1 mem → L2 Firestore (`forecastCache`, 30 min) → ERDDAP.
+  Rules in `firestore.rules` deny all client access (Admin SDK only). Confirmed writing in prod.
+- **Runtime:** Node 22 (`engines` + apphosting runtime).
+
+## AI is wired (Anthropic Haiku) — `ANTHROPIC_API_KEY` secret set via Secret Manager
+- **Shared client:** `src/lib/anthropic.ts` (`anthropicText`, `extractJsonObject`, `brDayKey`).
+  Model via `ANTHROPIC_MODEL` (default `claude-haiku-4-5-20251001`).
+- **Verdict-card phrases:** `src/lib/phrases.ts`. Static pools are the always-on FALLBACK;
+  Haiku generates all lines per scope/day, cached in Firestore (`zePhrases`) + memory.
+  Hybrid scope: per-city for the 18 curated cities (`city_<slug>`), `global` for long-tail.
+  Non-blocking: cache miss serves pool + regenerates in background. Off when no API key.
+  `buildView(city, forecast, phrases)` prefers AI line per pool, else pool. `roupa` pool removed.
+- **Free-question box ("Pergunta o que quiser"):** `src/lib/ask.ts` + `/api/pergunta`.
+  Per-question Haiku call reads the live forecast; **detects a city named in the question**,
+  geocodes it and answers for THAT city (one-call redirect via `{city:"..."}`); else uses the
+  page's city. Off-topic questions get a playful answer + neutral 💬 icon (`offtopic` flag).
+  Length-capped (200), word-boundary `clip()`, cached per question/page/day (`zeAnswers`).
+- **Optional cron pre-warm:** `/api/cron/phrases?key=<CRON_SECRET>` (unwired; `CRON_SECRET`
+  commented in apphosting.yaml). Only worth scheduling once there's steady traffic.
+- **Cost:** Haiku 4.5 = $1/M in, $5/M out (~$0.005/generation). Lazy ⇒ ~$0 at low traffic.
+- **Setup notes:** `AI-PHRASES.md`, deploy/domain in `DEPLOY.md` / `DOMAIN-SETUP.md`.
+  Local AI testing: put `ANTHROPIC_API_KEY` in `.env.local` (gitignored), restart dev.
+
+## Data correctness fix (important)
+`src/lib/gfs.ts` now drops local days before "today" — the GFS window opens at UTC-midnight,
+which is *yesterday evening* in Brazil's tz, so `daily[0]` was a partial yesterday. This was
+collapsing today's max/min and making "vai chover amanhã" read TODAY. Fixed for all tz.
+
+## UI changes this session
+- **Verdict cards:** show the 2–3 most relevant (relevance score in `verdicts.ts`,
+  `v.cards`); `v.allCards` keeps all 5 for the question box. Refined card visuals.
+- **Céu & Lua (`AstroGrid` in `WeatherSections.tsx`):** drawn **SVG moon** (real illumination
+  + waxing/waning, **hemisphere-correct** via `city.lat<0`), **moonrise/moonset** (approx
+  ±10 min, `moonRiseSet` in `moon.ts`), **twilight** (civil/nautical/astronomical) and precise
+  **"amanhã será X min Y s mais curto/longo"** (`sky` object; twilight + `daylightSeconds` in
+  `sun.ts`). NOTE: moon **phase/illumination is identical worldwide** (physically correct) —
+  only orientation + rise/set times differ by location.
+- **City page (`/cidade/[slug]`):** question box moved to top; 7-day forecast restyled as a
+  horizontal strip matching "Próximas horas" (today highlighted) and moved up.
+
+## Verification caveat
+The Linux sandbox mounts the project read-stale, so full `next build`/`tsc` can't run there.
+All changes were typechecked in isolated harnesses against the real types + runtime-tested.
+**Run `npm run typecheck && npm run build` on Windows before each deploy.**
+
+## Still open / next ideas
+- Switch geocoding to GeoNames (`GEONAMES_USERNAME`) — last commercial-safety item.
+- Optional: upcoming moon-phase calendar (Nova/Cheia dates), dew-point card, SEO content engine,
+  schedule the phrase cron once traffic grows.

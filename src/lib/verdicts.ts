@@ -1,7 +1,7 @@
 import type { City, Forecast, VerdictCardData } from './types';
 import { skyMap, degToCompass } from './sky';
 import { zePhrase, daySeed, type PoolKey, type ZePhraseSet } from './phrases';
-import { moonPhase } from './moon';
+import { moonPhase, moonRiseSet } from './moon';
 import { sunTimes } from './sun';
 
 // Verdict thresholds ported verbatim from the prototype. All transparent and
@@ -38,12 +38,26 @@ export interface BuiltView {
   seoIntro: string;
   faqs: { q: string; a: string }[];
   days: { dn: string; emoji: string; max: number; min: number; prob: number }[];
-  astro: { icon: string; label: string; value: string; sub: string }[];
   metrics: { icon: string; label: string; value: string }[];
   hours: { hour: string; emoji: string; temp: number; prob: number }[];
   rainAlert: { title: string; sub: string } | null;
   daylight: string;
-  moon: { name: string; emoji: string; illum: number };
+  moon: { name: string; emoji: string; illum: number; frac: number; waxing: boolean; ageDays: number; moonrise: string; moonset: string };
+  sky: {
+    sunrise: string;
+    sunset: string;
+    dayLength: string;
+    dayDeltaText: string;
+    dayDeltaDir: 'shorter' | 'longer' | 'same';
+    twilight: {
+      civilDawn: string;
+      civilDusk: string;
+      nauticalDawn: string;
+      nauticalDusk: string;
+      astroDawn: string;
+      astroDusk: string;
+    };
+  };
   source: string;
   fetchedAt: string;
 }
@@ -231,19 +245,40 @@ export function buildView(city: City, d: Forecast, phrases: ZePhraseSet = {}): B
     };
   }
 
-  // --- daylight + moon ---
+  // --- daylight, day-length delta, twilight + moon ---
   const [sy, sm, sd] = (times[0] || '').split('-').map(Number);
   const st = sy ? sunTimes(new Date(Date.UTC(sy, sm - 1, sd)), city.lat, city.lon, city.tz) : null;
   const dm = st ? st.daylightMinutes : 0;
   const daylight = `${Math.floor(dm / 60)}h ${String(dm % 60).padStart(2, '0')}min`;
-  const moon = moonPhase();
+  const mrs = sy ? moonRiseSet(new Date(Date.UTC(sy, sm - 1, sd)), city.lat, city.lon, city.tz) : { rise: null, set: null };
+  const moon = { ...moonPhase(), moonrise: mrs.rise ?? '—', moonset: mrs.set ?? '—' };
 
-  const astro = [
-    { icon: '🌅', label: 'Nascer do sol', value: sunrise, sub: 'horário local' },
-    { icon: '🌇', label: 'Pôr do sol', value: sunset, sub: 'horário local' },
-    { icon: '⏱️', label: 'Duração do dia', value: daylight, sub: 'de luz' },
-    { icon: moon.emoji, label: 'Fase da lua', value: moon.name, sub: `${moon.illum}% iluminada` },
-  ];
+  // Precise tomorrow vs today day-length delta (minutes + seconds).
+  let dayDeltaText = '—';
+  let dayDeltaDir: 'shorter' | 'longer' | 'same' = 'same';
+  if (st && sy) {
+    const stTomorrow = sunTimes(new Date(Date.UTC(sy, sm - 1, sd + 1)), city.lat, city.lon, city.tz);
+    const diff = stTomorrow.daylightSeconds - st.daylightSeconds; // seconds
+    dayDeltaDir = diff > 2 ? 'longer' : diff < -2 ? 'shorter' : 'same';
+    const abs = Math.abs(diff);
+    const mm = Math.floor(abs / 60);
+    const ss = abs % 60;
+    dayDeltaText =
+      dayDeltaDir === 'same'
+        ? 'praticamente igual a hoje'
+        : `${mm} min ${ss} s mais ${dayDeltaDir === 'longer' ? 'longo' : 'curto'}`;
+  }
+
+  const skyData = {
+    sunrise,
+    sunset,
+    dayLength: daylight,
+    dayDeltaText,
+    dayDeltaDir,
+    twilight: st
+      ? st.twilight
+      : { civilDawn: '—', civilDusk: '—', nauticalDawn: '—', nauticalDusk: '—', astroDawn: '—', astroDusk: '—' },
+  };
 
   return {
     city,
@@ -252,8 +287,8 @@ export function buildView(city: City, d: Forecast, phrases: ZePhraseSet = {}): B
     temp, feels, skyEmoji: sky.emoji, skyLabel: sky.label,
     maxToday, minToday, probToday, humidity, windKmh,
     windDir: cur.wind_direction_10m, windCompass: degToCompass(cur.wind_direction_10m), gust: r(cur.wind_gusts_10m), uv: r(uv),
-    cards, allCards, summary, summaryZe, seoIntro, faqs, days, astro,
-    metrics, hours, rainAlert, daylight, moon,
+    cards, allCards, summary, summaryZe, seoIntro, faqs, days,
+    metrics, hours, rainAlert, daylight, moon, sky: skyData,
     source: d.source, fetchedAt: d.fetchedAt,
   };
 }
