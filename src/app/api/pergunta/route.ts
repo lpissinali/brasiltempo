@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (e) {
     return NextResponse.json(
-      { error: 'O Zé tropeçou nos dados. Tenta de novo daqui a pouco.' },
+      { error: 'Tropeçamos nos dados. Tenta de novo daqui a pouco.' },
       { status: 500 },
     );
   }

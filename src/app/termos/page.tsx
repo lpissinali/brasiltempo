@@ -13,7 +13,7 @@ const ATUALIZADO = '28 de junho de 2026';
 export default function TermosPage() {
   return (
     <main className="container">
-      <Link href="/" style={{ font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>← Voltar pro Zé</Link>
+      <Link href="/" style={{ font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>← Voltar pro início</Link>
       <h1 style={{ font: '800 32px/1.15 var(--jakarta)', color: 'var(--ink)', letterSpacing: '-.025em', margin: '14px 0 6px' }}>
         Termos de Uso
       </h1>
@@ -23,14 +23,13 @@ export default function TermosPage() {
 
       <div className="article">
         <p className="lead">
-          Ao usar o BrasilTempo você concorda com estes termos. São curtos e diretos — combinando com
-          o Zé.
+          Ao usar o BrasilTempo você concorda com estes termos. São curtos e diretos — do nosso jeito.
         </p>
 
         <h2>O serviço</h2>
         <p>
           O BrasilTempo oferece previsões e vereditos sobre o tempo de forma gratuita. As respostas
-          do Zé são geradas a partir de dados meteorológicos e de critérios transparentes, com o
+          são geradas a partir de dados meteorológicos e de critérios transparentes, com o
           objetivo de ajudar no seu dia a dia.
         </p>
 
@@ -60,8 +59,8 @@ export default function TermosPage() {
 
         <h2>Propriedade intelectual</h2>
         <p>
-          A marca BrasilTempo, o personagem Zé do Tempo, os textos e o design são nossos. Os dados
-          meteorológicos de base são de domínio público; a forma como os apresentamos, não.
+          A marca BrasilTempo, os textos e o design são nossos. Os dados meteorológicos de base são
+          de domínio público; a forma como os apresentamos, não.
         </p>
 
         <h2>Privacidade</h2>

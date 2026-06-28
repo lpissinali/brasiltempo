@@ -5,7 +5,7 @@ import { POSTS, formatDate } from '@/lib/posts';
 export const metadata: Metadata = {
   title: 'Blog — BrasilTempo',
   description:
-    'O tempo explicado sem complicar — dicas, bastidores dos vereditos e curiosidades meteorológicas no jeitão do Zé. Como ler a chuva, o índice UV e a previsão de 7 dias.',
+    'O tempo explicado sem complicar — dicas, bastidores dos vereditos e curiosidades meteorológicas no jeitão do BrasilTempo. Como ler a chuva, o índice UV e a previsão de 7 dias.',
   alternates: { canonical: '/blog' },
 };
 
@@ -19,7 +19,7 @@ export default function BlogPage() {
         O tempo explicado sem complicar
       </h1>
       <p style={{ font: '500 15px/1.7 var(--jakarta)', color: '#3a4658', maxWidth: 560 }}>
-        Dicas, bastidores dos vereditos e curiosidades meteorológicas — tudo no jeitão do Zé, pra você
+        Dicas, bastidores dos vereditos e curiosidades meteorológicas — tudo sem juridiquês, pra você
         entender o céu sem precisar virar meteorologista.
       </p>
 
@@ -32,14 +32,14 @@ export default function BlogPage() {
             <div style={{ font: '800 18px/1.3 var(--jakarta)', color: 'var(--ink)', margin: '6px 0 4px' }}>{p.title}</div>
             <p style={{ font: '500 14px/1.6 var(--jakarta)', color: '#3a4658' }}>{p.description}</p>
             <span style={{ font: '600 13px var(--jakarta)', color: 'var(--muted-2)' }}>
-              {formatDate(p.date)} · {p.readingMin} min · Por Zé do Tempo
+              {formatDate(p.date)} · {p.readingMin} min · Por BrasilTempo
             </span>
           </Link>
         ))}
       </div>
 
       <Link href="/" style={{ display: 'inline-block', marginTop: 24, font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>
-        ← Voltar pro Zé
+        ← Voltar pro início
       </Link>
     </main>
   );

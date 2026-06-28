@@ -52,7 +52,7 @@ export async function generateMetadata({ params, searchParams }: { params: { slu
   if (!city) return { title: 'Cidade não encontrada — BrasilTempo', robots: { index: false, follow: false } };
   const place = city.uf ? `${city.n}, ${city.uf}` : city.n;
   const title = `Tempo em ${place} — BrasilTempo`;
-  const description = `Previsão do tempo em ${city.n} hoje e nos próximos dias: vai chover? dá praia? precisa de casaco? O Zé do Tempo responde, ancorado em dados NOAA GFS.`;
+  const description = `Previsão do tempo em ${city.n} hoje e nos próximos dias: vai chover? dá praia? precisa de casaco? O BrasilTempo responde, ancorado em dados NOAA GFS.`;
   // Canonical drops any query params (lat/lon/tz used for shared/searched links)
   // so the param-free city URL is the single indexable version.
   const canonical = `/cidade/${params.slug}`;
@@ -100,7 +100,7 @@ export default async function CidadePage({ params, searchParams }: { params: { s
     <main className="container">
       <JsonLd data={schema} />
       <Link href="/" style={{ font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>
-        ← Voltar pro Zé
+        ← Voltar pro início
       </Link>
 
       <div style={{ font: '700 12px var(--jakarta)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--muted)', marginTop: 14 }}>
@@ -122,7 +122,7 @@ export default async function CidadePage({ params, searchParams }: { params: { s
 
       <ResumoZe v={v} />
 
-      <H2>O veredito do Zé pra cada coisa</H2>
+      <H2>O veredito pra cada coisa</H2>
       <VerdictGrid cards={v.cards} />
 
       <H2>Sobre o tempo em {city.n} hoje</H2>

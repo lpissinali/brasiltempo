@@ -13,7 +13,7 @@ const ATUALIZADO = '28 de junho de 2026';
 export default function PrivacidadePage() {
   return (
     <main className="container">
-      <Link href="/" style={{ font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>← Voltar pro Zé</Link>
+      <Link href="/" style={{ font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>← Voltar pro início</Link>
       <h1 style={{ font: '800 32px/1.15 var(--jakarta)', color: 'var(--ink)', letterSpacing: '-.025em', margin: '14px 0 6px' }}>
         Política de Privacidade
       </h1>
@@ -47,7 +47,7 @@ export default function PrivacidadePage() {
             posição.
           </li>
           <li>
-            <strong>Perguntas na caixa do Zé.</strong> O texto que você digita é processado para
+            <strong>Perguntas na caixa de perguntas.</strong> O texto que você digita é processado para
             gerar a resposta e pode ficar em cache temporário (por cidade e dia) para acelerar
             perguntas repetidas. Não associamos perguntas à sua identidade.
           </li>

@@ -1,4 +1,4 @@
-// Zé do Tempo — the voice of BrasilTempo.
+// The voice of BrasilTempo.
 //
 // PHRASE STRATEGY (per the brief):
 //   - NEVER call an LLM per visitor; that destroys the AdSense margin.
@@ -48,7 +48,7 @@ export const POOLS: Record<PoolKey, string[]> = {
   uvSim: ['UV alto, passa o protetor antes de sair.', 'Capricha no protetor que o sol tá esperto.', 'Protetor sim, o sol não tá de brincadeira.'],
   uvRec: ['Uma camadinha não faz mal, previne o vermelhão.', 'Passa um protetorzinho só por garantia.', 'Sol moderado, mas protetor nunca é demais.'],
   uvRelaxa: ['Sol fraquinho hoje, pode relaxar no protetor.', 'UV baixo, o sol tá de boa contigo.', 'Hoje o sol deu trégua, sem stress.'],
-  resumo: ['No fim das contas, é só olhar pro céu e bora.', 'Confia no Zé que de tempo eu manjo, viu.', 'Anota aí e aproveita o dia, cumpadi.'],
+  resumo: ['No fim das contas, é só olhar pro céu e bora.', 'Pode confiar: de tempo a gente manja, viu.', 'Anota aí e aproveita o dia, cumpadi.'],
 };
 
 const ALL_KEYS = Object.keys(POOLS) as PoolKey[];
@@ -102,7 +102,7 @@ const POOL_BRIEF: Record<PoolKey, string> = {
   uvSim: 'UV alto, passar protetor',
   uvRec: 'UV moderado, protetor recomendado',
   uvRelaxa: 'UV baixo, sem preocupação com protetor',
-  resumo: 'fechamento bem-humorado do dia, assinatura do Zé',
+  resumo: 'fechamento bem-humorado do dia, no tom da casa',
 };
 
 // L1: per-instance memory; inFlight dedupes concurrent regenerations.
@@ -169,13 +169,14 @@ async function callHaiku(cityName?: string): Promise<ZePhraseSet> {
   const brief = ALL_KEYS.map((k) => `"${k}": ${POOL_BRIEF[k]}`).join('\n');
 
   const system =
-    'Você é o "Zé do Tempo", mascote de um site brasileiro de previsão do tempo. ' +
+    'Você é a voz do BrasilTempo, um site brasileiro de previsão do tempo. ' +
     'Sua voz é brasileira, bem-humorada, calorosa, com gírias leves e tom de tiozão simpático. ' +
+    'Nunca use um nome próprio nem se refira a um mascote; fale como a marca ("a gente"). ' +
     'Escreva frases curtas (máximo ~70 caracteres), em pt-BR, sem emoji e sem aspas, ' +
     'cada uma adequada ao contexto de veredito informado.';
 
   const user =
-    `Gere UMA frase do Zé${where} para cada chave abaixo. ` +
+    `Gere UMA frase${where} para cada chave abaixo. ` +
     `Cada frase precisa combinar com o veredito descrito.\n\n${brief}\n\n` +
     'Responda APENAS com um objeto JSON válido, mapeando cada chave para a sua frase. ' +
     'Sem markdown, sem comentários, sem texto fora do JSON.';

@@ -203,7 +203,7 @@ export function buildView(city: City, d: Forecast, phrases: ZePhraseSet = {}): B
 
   const sunrise = (dl.sunrise[0] || '').slice(11) || '—';
   const sunset = (dl.sunset[0] || '').slice(11) || '—';
-  const seoIntro = `A previsão do tempo em ${ufFull} aponta ${sky.label.toLowerCase()} neste momento, com ${temp}°C e sensação de ${feels}°C. A umidade do ar está em ${humidity}% e o vento sopra a ${windKmh} km/h. O sol nasce às ${sunrise} e se põe às ${sunset}. Para hoje, a máxima prevista é de ${maxToday}°C e a mínima de ${minToday}°C, com ${probToday}% de chance de chuva. O Zé resume tudo isso em vereditos diretos logo abaixo, pra você decidir rapidinho se dá praia, churrasco ou se é melhor levar o casaco.`;
+  const seoIntro = `A previsão do tempo em ${ufFull} aponta ${sky.label.toLowerCase()} neste momento, com ${temp}°C e sensação de ${feels}°C. A umidade do ar está em ${humidity}% e o vento sopra a ${windKmh} km/h. O sol nasce às ${sunrise} e se põe às ${sunset}. Para hoje, a máxima prevista é de ${maxToday}°C e a mínima de ${minToday}°C, com ${probToday}% de chance de chuva. O BrasilTempo resume tudo isso em vereditos diretos logo abaixo, pra você decidir rapidinho se dá praia, churrasco ou se é melhor levar o casaco.`;
 
   const faqs = [
     { q: `Vai chover amanhã em ${city.n}?`, a: `Para amanhã, a chance de chuva é de ${prob1}% com previsão de ${r(sum1)}mm. Resumindo: ${rainBig.toLowerCase()}. ${ze(rainPool)}` },

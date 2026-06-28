@@ -29,7 +29,7 @@ export function FreeQuestionBox({ city }: { city: City }) {
       if (!res.ok) throw new Error(data.error || 'erro');
       setAnswer(data);
     } catch (e: any) {
-      setErr(e.message || 'O Zé tropeçou. Tenta de novo.');
+      setErr(e.message || 'Algo deu errado. Tenta de novo.');
     } finally {
       setLoading(false);
     }
@@ -38,7 +38,7 @@ export function FreeQuestionBox({ city }: { city: City }) {
   return (
     <div style={{ background: 'var(--ink)', borderRadius: 20, padding: 18, boxShadow: '0 14px 34px rgba(20,40,70,.16)' }}>
       <div style={{ font: '700 12px var(--jakarta)', letterSpacing: '.05em', textTransform: 'uppercase', color: '#9fb2c8' }}>
-        Pergunta o que quiser pro Zé
+        Pergunta o que quiser pro BrasilTempo
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
         <input

@@ -23,11 +23,11 @@ export interface Post {
 
 export const POSTS: Post[] = [
   {
-    slug: 'como-o-ze-decide-se-vai-chover',
-    title: 'Como o Zé decide se vai chover (sem cristal nem palpite)',
+    slug: 'como-saber-se-vai-chover',
+    title: 'Como o BrasilTempo decide se vai chover (sem cristal nem palpite)',
     tag: 'Bastidores',
     description:
-      'Por trás do "VAI SIM", "TALVEZ" ou "NÃO" tem dado de verdade. Veja os três sinais — probabilidade, volume e umidade — e os limites exatos que o Zé usa pra cravar se vai chover.',
+      'Por trás do "VAI SIM", "TALVEZ" ou "NÃO" tem dado de verdade. Veja os três sinais — probabilidade, volume e umidade — e os limites exatos que o BrasilTempo usa pra cravar se vai chover.',
     date: '2026-06-10',
     readingMin: 5,
     faqs: [
@@ -37,14 +37,14 @@ export const POSTS: Post[] = [
       },
       {
         q: 'Qual a diferença entre probabilidade e volume de chuva?',
-        a: 'Probabilidade (%) é a chance de chover; volume (mm) é quanta água deve cair. Dá pra ter 90% de chance de uma garoa de 1 mm, ou 40% de chance de um toró de 30 mm. Por isso o Zé olha os dois.',
+        a: 'Probabilidade (%) é a chance de chover; volume (mm) é quanta água deve cair. Dá pra ter 90% de chance de uma garoa de 1 mm, ou 40% de chance de um toró de 30 mm. Por isso o BrasilTempo olha os dois.',
       },
     ],
     Body: () => (
       <>
         <p className="lead">
           A graça do BrasilTempo é não te entregar um monte de número solto e te deixar adivinhando.
-          O Zé olha os dados e responde direto: <strong>vai chover ou não?</strong> Mas atrás daquele
+          A gente olha os dados e responde direto: <strong>vai chover ou não?</strong> Mas atrás daquele
           veredito tem critério — e ele é todo transparente. Bora abrir a caixa-preta (que de preta
           não tem nada).
         </p>
@@ -58,11 +58,11 @@ export const POSTS: Post[] = [
           <strong>taxa de precipitação</strong> nas próximas horas e dias.
         </p>
         <p>
-          O Zé pega esses números crus e traduz pra linguagem de gente. Nada de "pratesfc 0,0003
+          O BrasilTempo pega esses números crus e traduz pra linguagem de gente. Nada de "pratesfc 0,0003
           kg/m²/s" — isso vira "chuva fraca rondando".
         </p>
 
-        <h2>Os três sinais que o Zé lê</h2>
+        <h2>Os três sinais que o BrasilTempo lê</h2>
         <p>Para decidir se vai chover amanhã, três coisas entram na conta:</p>
         <ul>
           <li>
@@ -106,7 +106,7 @@ export const POSTS: Post[] = [
 
         <h2>Por que "amanhã" e não "hoje"?</h2>
         <p>
-          A pergunta clássica é sobre <em>amanhã</em> — é quando dá tempo de mudar o plano. Mas o Zé
+          A pergunta clássica é sobre <em>amanhã</em> — é quando dá tempo de mudar o plano. Mas o BrasilTempo
           também monta a <strong>janela de chuva de hoje</strong> a partir da probabilidade hora a
           hora: se há um bloco de horas com chance alta, ele te avisa "chuva por volta das 15h às
           18h". Assim você sabe não só <em>se</em>, mas <em>quando</em>.
@@ -118,11 +118,11 @@ export const POSTS: Post[] = [
           <Link href="/">previsão do tempo da sua cidade</Link> e leia o veredito de cima. Quer
           detalhe? Os cartões mostram o dado que sustenta a resposta — probabilidade, volume, o dia
           do fim de semana. E se a sua pergunta for específica ("rola pedalar amanhã de manhã?"), é
-          só perguntar pro Zé na caixa de perguntas: ele lê a previsão e responde no jeitão dele.
+          só perguntar na caixa de perguntas: o BrasilTempo lê a previsão e responde no mesmo tom.
         </p>
         <p>
           No fim das contas, previsão é previsão — o tempo às vezes apronta. Mas com critério claro e
-          dado de verdade, o palpite do Zé tem fundamento. E ele chuta com carinho.
+          dado de verdade, o palpite do BrasilTempo tem fundamento. E a gente chuta com carinho.
         </p>
       </>
     ),
@@ -165,7 +165,7 @@ export const POSTS: Post[] = [
         </p>
         <ul>
           <li>
-            <strong>0–2 (baixo)</strong> — risco pequeno. O Zé diz "relaxa". Dá pra ficar tranquilo.
+            <strong>0–2 (baixo)</strong> — risco pequeno. O BrasilTempo diz "relaxa". Dá pra ficar tranquilo.
           </li>
           <li>
             <strong>3–5 (moderado)</strong> — proteção recomendada se você vai ficar um tempo no sol.
@@ -195,7 +195,7 @@ export const POSTS: Post[] = [
         <p>
           O modelo NOAA GFS não entrega o índice UV mastigado, mas entrega a{' '}
           <strong>radiação solar de onda curta</strong> que chega ao solo (em watts por metro
-          quadrado). O Zé converte esse fluxo num índice na escala conhecida: quanto mais energia
+          quadrado). O BrasilTempo converte esse fluxo num índice na escala conhecida: quanto mais energia
           solar batendo, maior o UV. É uma estimativa transparente — e o número aparece já traduzido
           em "baixo", "alto" ou "extremo" pra você não precisar decorar faixa nenhuma.
         </p>
@@ -224,7 +224,7 @@ export const POSTS: Post[] = [
         <h2>Olhe o número antes de sair</h2>
         <p>
           Antes do rolê ao ar livre, dá uma espiada no{' '}
-          <Link href="/">índice UV da sua cidade</Link> no cartão "Agora". Se o Zé disser "passa
+          <Link href="/">índice UV da sua cidade</Link> no cartão "Agora". Se o BrasilTempo disser "passa
           agora", leve a sério: cinco segundos de protetor evitam três dias de ardência. Sol é vida,
           mas com juízo.
         </p>
@@ -290,7 +290,7 @@ export const POSTS: Post[] = [
           errada antes: é que estava sendo refinada.
         </p>
 
-        <h2>Como o Zé lida com isso</h2>
+        <h2>Como o BrasilTempo lida com isso</h2>
         <p>
           O horizonte do modelo é de cerca de <strong>7 dias</strong>, e é por isso que a tira de
           previsão do BrasilTempo vai até ali — nem mais, pra não vender certeza que não existe. Os
@@ -317,7 +317,7 @@ export const POSTS: Post[] = [
           Previsão não é bola de cristal; é a melhor aposta possível com a ciência de hoje. Quanto
           mais perto o dia, melhor a aposta. Confira a{' '}
           <Link href="/">previsão dos próximos dias na sua cidade</Link> e planeje com a cabeça —
-          o Zé te dá o caminho, você dá a caneta.
+          o BrasilTempo te dá o caminho, você dá a caneta.
         </p>
       </>
     ),

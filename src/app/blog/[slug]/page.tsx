@@ -70,7 +70,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           {post.title}
         </h1>
         <div style={{ font: '600 13px var(--jakarta)', color: 'var(--muted)', marginBottom: 24 }}>
-          Por Zé do Tempo · {formatDate(post.updated || post.date)} · {post.readingMin} min de leitura
+          Por BrasilTempo · {formatDate(post.updated || post.date)} · {post.readingMin} min de leitura
         </div>
 
         <div className="article">

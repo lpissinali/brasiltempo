@@ -34,7 +34,7 @@ export function websiteSchema() {
     url: `${SITE}/`,
     inLanguage: 'pt-BR',
     description:
-      'Previsão do tempo brasileira com personalidade. O Zé do Tempo responde perguntas da vida real — vai chover? rola praia? precisa de casaco? — ancorado em dados NOAA GFS.',
+      'Previsão do tempo brasileira com personalidade. O BrasilTempo responde perguntas da vida real — vai chover? rola praia? precisa de casaco? — ancorado em dados NOAA GFS.',
     publisher: {
       '@type': 'Organization',
       name: 'BrasilTempo',
@@ -74,7 +74,7 @@ export function articleSchema(a: {
     dateModified: a.updated || a.date,
     mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE}${a.path}` },
     inLanguage: 'pt-BR',
-    author: { '@type': 'Person', name: 'Zé do Tempo' },
+    author: { '@type': 'Organization', name: 'BrasilTempo' },
     publisher: { '@type': 'Organization', name: 'BrasilTempo', url: `${SITE}/` },
   };
 }

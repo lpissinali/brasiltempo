@@ -3,6 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { Logo, Wordmark } from '@/components/Logo';
+import { Analytics } from '@/components/Analytics';
 import { POPULAR } from '@/lib/cities';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'BrasilTempo — o oráculo do tempo que fala a sua língua',
     description:
-      'Pergunta da vida real, resposta direta — sempre ancorada em dado de verdade. O Zé do Tempo te responde.',
+      'Pergunta da vida real, resposta direta — sempre ancorada em dado de verdade. O BrasilTempo te responde.',
     locale: 'pt_BR',
     type: 'website',
   },
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         {children}
         <Footer />
+        <Analytics />
       </body>
     </html>
   );
@@ -71,7 +73,7 @@ function Footer() {
           <div>
             <div style={col}>Como funciona</div>
             <span style={{ font: '500 13px/1.6 var(--jakarta)', color: '#9fb2c8' }}>
-              O Zé lê os dados meteorológicos da NOAA (GFS) e traduz em veredito direto. Os critérios são transparentes e ajustáveis — nada de caixa-preta.
+              O BrasilTempo lê os dados meteorológicos da NOAA (GFS) e traduz em veredito direto. Os critérios são transparentes e ajustáveis — nada de caixa-preta.
             </span>
           </div>
         </div>
@@ -88,7 +90,7 @@ function Footer() {
           }}
         >
           <span>© 2026 BrasilTempo · feito no Brasil 🇧🇷</span>
-          <span>Dados: NOAA GFS · previsão é previsão, o Zé chuta com carinho.</span>
+          <span>Dados: NOAA GFS · previsão é previsão, a gente chuta com carinho.</span>
         </div>
       </div>
     </footer>

@@ -18,6 +18,14 @@ env:
       - BUILD
       - RUNTIME
 
+  # Google Analytics 4 Measurement ID. NEXT_PUBLIC_* is inlined at build time,
+  # so BUILD availability is required for the tag to render in production.
+  - variable: NEXT_PUBLIC_GA_ID
+    value: "G-JXFL7E2XRS"
+    availability:
+      - BUILD
+      - RUNTIME
+
   # Haiku model for Zé's phrases (public, not a secret). Optional — the code
   # defaults to this same value if unset.
   - variable: ANTHROPIC_MODEL

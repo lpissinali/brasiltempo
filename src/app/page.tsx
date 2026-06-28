@@ -57,7 +57,7 @@ export default async function HomePage() {
         <h2>Previsão do tempo que responde a pergunta de verdade</h2>
         <p>
           O <strong>BrasilTempo</strong> é a previsão do tempo que fala a sua língua. Em vez de
-          despejar um monte de número solto, o Zé do Tempo lê os dados meteorológicos ao vivo e te dá
+          despejar um monte de número solto, o BrasilTempo lê os dados meteorológicos ao vivo e te dá
           o veredito na lata: <strong>vai chover amanhã?</strong> rola praia ou um rolê ao ar livre no
           fim de semana? precisa de casaco hoje? dá pra acender a churrasqueira? tem que passar
           protetor? Cada resposta vem com o dado que a sustenta — probabilidade de chuva, máxima e
@@ -67,7 +67,7 @@ export default async function HomePage() {
           Tudo é ancorado em dados reais do <strong>NOAA GFS</strong>, o modelo meteorológico global de
           domínio público, atualizado várias vezes ao dia. Os critérios de cada veredito são
           transparentes e ajustáveis — nada de caixa-preta. Veja{' '}
-          <Link href="/blog/como-o-ze-decide-se-vai-chover">como o Zé decide se vai chover</Link>,{' '}
+          <Link href="/blog/como-saber-se-vai-chover">como saber se vai chover</Link>,{' '}
           <Link href="/blog/o-que-e-indice-uv">o que significa o índice UV</Link> e{' '}
           <Link href="/blog/previsao-7-dias-confiavel">se dá pra confiar na previsão de 7 dias</Link>.
         </p>
@@ -86,7 +86,7 @@ export default async function HomePage() {
           ))}
         </p>
 
-        <h2>Aprenda a ler o céu com o Zé</h2>
+        <h2>Aprenda a ler o céu sem complicar</h2>
         <p>
           No blog, o tempo explicado sem complicar:{' '}
           {POSTS.map((p, i) => (
