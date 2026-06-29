@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import './globals.css';
 import { Header } from '@/components/Header';
@@ -8,18 +8,55 @@ import { POPULAR } from '@/lib/cities';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
+const DESC =
+  'BrasilTempo — previsão do tempo brasileira com personalidade. Responde perguntas da vida real: vai chover? rola praia? precisa de casaco? Tudo ancorado em dados reais (NOAA GFS).';
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
   title: 'BrasilTempo — vai dar? previsão do tempo com personalidade',
-  description:
-    'BrasilTempo — previsão do tempo brasileira com personalidade. Responde perguntas da vida real: vai chover? rola praia? precisa de casaco? Tudo ancorado em dados reais (NOAA GFS).',
+  description: DESC,
+  applicationName: 'BrasilTempo',
+  authors: [{ name: 'BrasilTempo' }],
+  creator: 'BrasilTempo',
+  publisher: 'BrasilTempo',
+  keywords: [
+    'previsão do tempo',
+    'tempo agora',
+    'vai chover',
+    'clima',
+    'previsão do tempo Brasil',
+    'temperatura',
+    'índice UV',
+    'fim de semana',
+  ],
+  formatDetection: { telephone: false, address: false, email: false },
+  other: {
+    // AdSense site verification.
+    'google-adsense-account': 'ca-pub-4831931651277615',
+  },
   openGraph: {
+    type: 'website',
+    locale: 'pt_BR',
+    siteName: 'BrasilTempo',
+    url: '/',
     title: 'BrasilTempo — o oráculo do tempo que fala a sua língua',
     description:
       'Pergunta da vida real, resposta direta — sempre ancorada em dado de verdade. O BrasilTempo te responde.',
-    locale: 'pt_BR',
-    type: 'website',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'BrasilTempo' }],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'BrasilTempo — previsão do tempo com personalidade',
+    description:
+      'Pergunta da vida real, resposta direta — sempre ancorada em dado de verdade.',
+    images: ['/og.png'],
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#2E7BD6',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

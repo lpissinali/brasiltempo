@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { POSTS, formatDate } from '@/lib/posts';
+import { JsonLd, breadcrumbSchema, blogIndexSchema } from '@/components/JsonLd';
 
 export const metadata: Metadata = {
   title: 'Blog — BrasilTempo',
@@ -12,6 +13,15 @@ export const metadata: Metadata = {
 export default function BlogPage() {
   return (
     <main className="container">
+      <JsonLd
+        data={[
+          breadcrumbSchema([
+            { name: 'Início', path: '/' },
+            { name: 'Blog', path: '/blog' },
+          ]),
+          blogIndexSchema(POSTS.map((p) => ({ title: p.title, description: p.description, slug: p.slug, date: p.date }))),
+        ]}
+      />
       <div style={{ font: '700 12px var(--jakarta)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--muted)' }}>
         Blog
       </div>
@@ -37,10 +47,6 @@ export default function BlogPage() {
           </Link>
         ))}
       </div>
-
-      <Link href="/" style={{ display: 'inline-block', marginTop: 24, font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>
-        ← Voltar pro início
-      </Link>
     </main>
   );
 }

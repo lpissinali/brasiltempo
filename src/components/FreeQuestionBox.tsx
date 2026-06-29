@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { City } from '@/lib/types';
 
-interface Answer { verdict: string; ze: string; meta: string; icon: string; accent: string; }
+interface Answer { verdict: string; ze: string; meta: string; icon: string; accent: string; cityName?: string; citySlug?: string; }
 
 export function FreeQuestionBox({ city }: { city: City }) {
   const [q, setQ] = useState('');
@@ -40,6 +40,9 @@ export function FreeQuestionBox({ city }: { city: City }) {
       <div style={{ font: '700 12px var(--jakarta)', letterSpacing: '.05em', textTransform: 'uppercase', color: '#9fb2c8' }}>
         Pergunta o que quiser pro BrasilTempo
       </div>
+      <div style={{ font: '600 12px var(--jakarta)', color: '#7a8aa0', marginTop: 3 }}>
+        Sobre {city.n}{city.uf ? `, ${city.uf}` : ''} — ou cite outra cidade, ou pergunte do Brasil todo.
+      </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
         <input
           value={q}
@@ -66,11 +69,19 @@ export function FreeQuestionBox({ city }: { city: City }) {
       {answer && (
         <div style={{ marginTop: 14, background: '#fff', borderRadius: 14, padding: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 20 }}>{answer.icon}</span>
+            {answer.icon ? <span style={{ fontSize: 20 }}>{answer.icon}</span> : null}
             <span style={{ font: '800 20px var(--jakarta)', color: answer.accent }}>{answer.verdict}</span>
           </div>
           <div style={{ marginTop: 6, font: '600 14px/1.4 var(--jakarta)', color: 'var(--ink)', fontStyle: 'italic' }}>“{answer.ze}”</div>
-          <div style={{ marginTop: 4, font: '600 11px var(--jakarta)', color: 'var(--muted-2)' }}>{answer.meta}</div>
+          {answer.meta ? <div style={{ marginTop: 4, font: '600 11px var(--jakarta)', color: 'var(--muted-2)' }}>{answer.meta}</div> : null}
+          {answer.citySlug ? (
+            <a
+              href={`/cidade/${answer.citySlug}`}
+              style={{ display: 'inline-block', marginTop: 10, font: '700 12px var(--jakarta)', color: 'var(--blue)' }}
+            >
+              Ver previsão completa de {answer.cityName} →
+            </a>
+          ) : null}
         </div>
       )}
     </div>

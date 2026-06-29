@@ -22,6 +22,9 @@ export interface ZeAnswer {
   ze: string;
   meta: string;
   offtopic?: boolean; // true when the question isn't about the weather
+  topic?: string; // weather category of the answer → drives the UI icon
+  cityName?: string; // set when the answer resolved to a DIFFERENT city than the page
+  citySlug?: string; // → the box can link to that city's full forecast
 }
 
 export type AskResult = ({ kind: 'answer' } & ZeAnswer) | { kind: 'city'; city: string };
@@ -49,14 +52,14 @@ function clip(s: string, n: number): string {
   return (sp > 40 ? cut.slice(0, sp) : cut).trimEnd() + '…';
 }
 
-function buildContext(v: BuiltView): string {
+function buildContext(v: BuiltView, national?: string): string {
   const hrs = v.hours.map((h) => `${h.hour} ${h.temp}° ${h.prob}%`).join('; ');
   const dias = v.days.map((dia) => `${dia.dn} ${dia.prob}%`).join('; ');
   const verds = v.allCards.map((c) => `- ${c.q} ${c.big} (${c.meta})`).join('\n');
   const janela = v.rainAlert
     ? `Janela de chuva hoje: ${v.rainAlert.title}.`
     : 'Sem janela de chuva significativa hoje.';
-  return [
+  const lines = [
     `Cidade: ${v.cidade}`,
     `Agora: ${v.temp}°C (sensação ${v.feels}°), ${v.skyLabel}, umidade ${v.humidity}%, vento ${v.windKmh} km/h, UV ${v.uv}.`,
     `Hoje: máx ${v.maxToday}°, mín ${v.minToday}°, chance de chuva ${v.probToday}%.`,
@@ -65,7 +68,15 @@ function buildContext(v: BuiltView): string {
     `Próximos dias (dia chuva%): ${dias}`,
     'Vereditos do dia:',
     verds,
-  ].join('\n');
+  ];
+  if (national) {
+    lines.push(
+      '',
+      'Panorama nacional de hoje (principais cidades — use para comparações tipo "mais fria/quente do Brasil"):',
+      national,
+    );
+  }
+  return lines.join('\n');
 }
 
 const PERSONA =
@@ -79,26 +90,38 @@ function systemPrompt(allowRedirect: boolean): string {
     ' Responda usando SOMENTE os dados fornecidos; nunca invente números. ' +
     'Se a pergunta citar um período (manhã, tarde, noite, agora), use as próximas horas; ' +
     'se citar "amanhã" ou dias da semana, use os próximos dias. ' +
+    'Se houver um panorama nacional nos dados, use-o para responder comparações entre cidades do ' +
+    'Brasil (ex.: a mais fria ou mais quente hoje), citando a cidade e o número. ' +
+    'Se a pergunta for nacional ou sobre um lugar SEM dados disponíveis, não invente números: diga ' +
+    'com bom humor que dá pra ver o tempo de qualquer cidade e peça pra pessoa indicar uma cidade. ' +
     'Se a pergunta NÃO for sobre o tempo, responda mesmo assim no seu estilo, com bom humor, ' +
     'dando uma resposta leve e puxando de volta pro clima — e marque "offtopic": true. ' +
     'Responda SEMPRE só com JSON, sem markdown: ' +
     '{"verdict":"1 a 4 palavras em MAIÚSCULAS","ze":"frase curta e bem-humorada, máx ~90 caracteres, sem emoji",' +
-    '"meta":"um dado curto e concreto do tempo, ex.: \\"amanhã 28% de chuva\\" — se a pergunta não for sobre clima, deixe meta como string vazia \\"\\"",' +
+    '"meta":"um dado curto e concreto do tempo, ex.: \\"Curitiba 12° agora\\" — vazio \\"\\" se não for sobre clima",' +
+    '"topic":"a categoria do clima na sua resposta, UM de: chuva, sol, calor, frio, vento, umidade, praia, uv — ou string vazia \\"\\" quando não fizer sentido um ícone",' +
     '"offtopic": true se a pergunta não for sobre tempo/clima, caso contrário false}. Nunca escreva instruções dentro do JSON.';
   const redirect =
-    ' MUITO IMPORTANTE: se a pergunta for claramente sobre uma CIDADE ou LUGAR diferente da ' +
-    'cidade dos dados acima, NÃO responda o clima — retorne só {"city":"<nome do lugar citado>"}.';
+    ' MUITO IMPORTANTE: se a pergunta for claramente sobre UMA CIDADE ou LUGAR específico diferente da ' +
+    'cidade dos dados acima (e não uma comparação nacional), NÃO responda o clima — retorne só {"city":"<nome do lugar citado>"}.';
   return allowRedirect ? base + redirect : base;
 }
 
-/** One Haiku call against a given city's view. May ask the route to switch city. */
-export async function askZeOnce(question: string, view: BuiltView, allowRedirect: boolean): Promise<AskResult | null> {
+/** One Haiku call against a given city's view. May ask the route to switch city.
+ *  `national` (optional) is a compact snapshot of the curated cities so the model
+ *  can answer nationwide comparisons. */
+export async function askZeOnce(
+  question: string,
+  view: BuiltView,
+  allowRedirect: boolean,
+  national?: string,
+): Promise<AskResult | null> {
   if (!process.env.ANTHROPIC_API_KEY) return null;
   const q = normalize(question);
   if (!q) return null;
 
   try {
-    const user = `Pergunta do usuário: "${q}"\n\nDados:\n${buildContext(view)}`;
+    const user = `Pergunta do usuário: "${q}"\n\nDados:\n${buildContext(view, national)}`;
     const obj = extractJsonObject(await anthropicText(systemPrompt(allowRedirect), user, 300));
     if (!obj) return null;
 
@@ -110,8 +133,9 @@ export async function askZeOnce(question: string, view: BuiltView, allowRedirect
     const ze = typeof obj.ze === 'string' ? clip(obj.ze.trim().replace(/^["']+|["']+$/g, ''), 150) : '';
     const meta = typeof obj.meta === 'string' ? clip(obj.meta.trim(), 70) : '';
     const offtopic = obj.offtopic === true;
+    const topic = typeof obj.topic === 'string' ? obj.topic.trim().toLowerCase() : '';
     if (!verdict || !ze) return null;
-    return { kind: 'answer', verdict, ze, meta, offtopic };
+    return { kind: 'answer', verdict, ze, meta, offtopic, topic };
   } catch {
     return null;
   }

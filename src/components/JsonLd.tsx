@@ -39,7 +39,40 @@ export function websiteSchema() {
       '@type': 'Organization',
       name: 'BrasilTempo',
       url: `${SITE}/`,
+      logo: { '@type': 'ImageObject', url: `${SITE}/icon-512.png` },
     },
+  };
+}
+
+/** Generic WebPage — for content pages without a richer type (e.g. legal). */
+export function webPageSchema(p: { name: string; description: string; path: string }) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: p.name,
+    description: p.description,
+    url: `${SITE}${p.path}`,
+    inLanguage: 'pt-BR',
+    isPartOf: { '@type': 'WebSite', name: 'BrasilTempo', url: `${SITE}/` },
+  };
+}
+
+/** Blog landing page listing its posts. */
+export function blogIndexSchema(posts: { title: string; description: string; slug: string; date: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: 'Blog do BrasilTempo',
+    description: 'O tempo explicado sem complicar — dicas, bastidores dos vereditos e curiosidades meteorológicas.',
+    url: `${SITE}/blog`,
+    inLanguage: 'pt-BR',
+    blogPost: posts.map((p) => ({
+      '@type': 'BlogPosting',
+      headline: p.title,
+      description: p.description,
+      datePublished: p.date,
+      url: `${SITE}/blog/${p.slug}`,
+    })),
   };
 }
 

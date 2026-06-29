@@ -28,6 +28,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
       locale: 'pt_BR',
       publishedTime: post.date,
       modifiedTime: post.updated || post.date,
+      images: ['/og.png'],
     },
   };
 }

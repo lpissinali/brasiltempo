@@ -1,21 +1,25 @@
-// BrasilTempo mark — blue rounded square with sun + cloud (ported from prototype).
+// BrasilTempo symbol — official artwork: golden sun with rounded rays over two
+// blue waves. Transparent (no tile); reads well on light and on the dark header.
+const RAY_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
+
 export function Logo({ size = 32, bob = false }: { size?: number; bob?: boolean }) {
   return (
     <svg
-      viewBox="0 0 36 36"
+      viewBox="0 0 100 100"
       width={size}
       height={size}
       style={{ display: 'block', flex: 'none' }}
       className={bob ? 'bob' : undefined}
       aria-hidden
     >
-      <rect width="36" height="36" rx="10" fill="#2E7BD6" />
-      <circle cx="13.5" cy="13" r="6" fill="#FFC83D" />
-      <g fill="#ffffff">
-        <circle cx="16" cy="25" r="5" />
-        <circle cx="23" cy="24" r="6.5" />
-        <rect x="12" y="24" width="16" height="7.5" rx="3.75" />
+      <g fill="#FFC83D">
+        {RAY_ANGLES.map((a) => (
+          <rect key={a} x="47.5" y="6" width="5" height="13" rx="2.5" transform={`rotate(${a} 50 44)`} />
+        ))}
       </g>
+      <circle cx="50" cy="44" r="19" fill="#FFC83D" />
+      <path d="M10 72 q9 -8 18 0 t18 0 t18 0 t18 0" fill="none" stroke="#2E7BD6" strokeWidth="6" strokeLinecap="round" />
+      <path d="M15 84 q9 -8 18 0 t18 0 t18 0" fill="none" stroke="#2E7BD6" strokeWidth="6" strokeLinecap="round" />
     </svg>
   );
 }

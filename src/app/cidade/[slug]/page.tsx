@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { City } from '@/lib/types';
 import { getCityBySlug } from '@/lib/cities';
@@ -67,7 +66,7 @@ export async function generateMetadata({ params, searchParams }: { params: { slu
     description,
     alternates: { canonical },
     robots: curated ? undefined : { index: false, follow: true },
-    openGraph: { title, description, url: canonical, locale: 'pt_BR', type: 'article' },
+    openGraph: { title, description, url: canonical, locale: 'pt_BR', type: 'article', images: ['/og.png'] },
   };
 }
 
@@ -99,10 +98,6 @@ export default async function CidadePage({ params, searchParams }: { params: { s
   return (
     <main className="container">
       <JsonLd data={schema} />
-      <Link href="/" style={{ font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>
-        ← Voltar pro início
-      </Link>
-
       <div style={{ font: '700 12px var(--jakarta)', letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--muted)', marginTop: 14 }}>
         Previsão do tempo
       </div>

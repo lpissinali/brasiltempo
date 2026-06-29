@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { JsonLd, breadcrumbSchema, webPageSchema } from '@/components/JsonLd';
 
 export const metadata: Metadata = {
   title: 'Política de Cookies — BrasilTempo',
@@ -13,8 +13,20 @@ const ATUALIZADO = '28 de junho de 2026';
 export default function CookiesPage() {
   return (
     <main className="container">
-      <Link href="/" style={{ font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>← Voltar pro início</Link>
-      <h1 style={{ font: '800 32px/1.15 var(--jakarta)', color: 'var(--ink)', letterSpacing: '-.025em', margin: '14px 0 6px' }}>
+      <JsonLd
+        data={[
+          breadcrumbSchema([
+            { name: 'Início', path: '/' },
+            { name: 'Política de Cookies', path: '/cookies' },
+          ]),
+          webPageSchema({
+            name: 'Política de Cookies',
+            description: 'O que são cookies, quais o BrasilTempo usa e como gerenciá-los.',
+            path: '/cookies',
+          }),
+        ]}
+      />
+      <h1 style={{ font: '800 32px/1.15 var(--jakarta)', color: 'var(--ink)', letterSpacing: '-.025em', margin: '0 0 6px' }}>
         Política de Cookies
       </h1>
       <div style={{ font: '600 13px var(--jakarta)', color: 'var(--muted)', marginBottom: 22 }}>

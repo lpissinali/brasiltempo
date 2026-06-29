@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { JsonLd, breadcrumbSchema, webPageSchema } from '@/components/JsonLd';
 
 export const metadata: Metadata = {
   title: 'Termos de Uso — BrasilTempo',
@@ -13,8 +14,20 @@ const ATUALIZADO = '28 de junho de 2026';
 export default function TermosPage() {
   return (
     <main className="container">
-      <Link href="/" style={{ font: '600 13px var(--jakarta)', color: 'var(--blue)' }}>← Voltar pro início</Link>
-      <h1 style={{ font: '800 32px/1.15 var(--jakarta)', color: 'var(--ink)', letterSpacing: '-.025em', margin: '14px 0 6px' }}>
+      <JsonLd
+        data={[
+          breadcrumbSchema([
+            { name: 'Início', path: '/' },
+            { name: 'Termos de Uso', path: '/termos' },
+          ]),
+          webPageSchema({
+            name: 'Termos de Uso',
+            description: 'As regras de uso do BrasilTempo: a previsão é uma estimativa, sem garantias.',
+            path: '/termos',
+          }),
+        ]}
+      />
+      <h1 style={{ font: '800 32px/1.15 var(--jakarta)', color: 'var(--ink)', letterSpacing: '-.025em', margin: '0 0 6px' }}>
         Termos de Uso
       </h1>
       <div style={{ font: '600 13px var(--jakarta)', color: 'var(--muted)', marginBottom: 22 }}>
