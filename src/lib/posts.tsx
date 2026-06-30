@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import Link from 'next/link';
 
 // Blog registry. Each post is real, evergreen, genuinely useful content (not
@@ -18,7 +17,7 @@ export interface Post {
   readingMin: number;
   /** Optional Q&A surfaced as FAQPage structured data + an on-page FAQ. */
   faqs?: { q: string; a: string }[];
-  Body: () => ReactNode;
+  Body: () => JSX.Element;
 }
 
 export const POSTS: Post[] = [

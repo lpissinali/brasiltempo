@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Logo, Wordmark } from './Logo';
 import { SearchIcon, LocateIcon, Spinner } from './Icons';
 import { POPULAR } from '@/lib/cities';
+import { track } from '@/lib/track';
 
 interface GeoResult {
   name: string;
@@ -81,6 +82,7 @@ export function Header() {
     setQ('');
     setResults([]);
     setOpen(false);
+    track('cidade_buscada', { cidade: r.name, uf: r.region, pais: r.country });
     router.push(`/cidade/${r.slug}?${navParams(r)}`);
   }
 
@@ -100,6 +102,7 @@ export function Header() {
           if (!res.ok) throw new Error('reverse');
           const d = await res.json();
           const params = navParams({ lat: d.lat, lon: d.lon, name: d.name, region: d.region, country: d.country, timezone: tz });
+          track('localizacao_usada', { cidade: d.name, uf: d.region });
           router.push(`/cidade/${d.slug}?${params}`);
         } catch {
           setGeoErr('Não consegui descobrir sua cidade. Tenta buscar pelo nome.');

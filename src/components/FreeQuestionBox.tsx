@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { City } from '@/lib/types';
+import { track } from '@/lib/track';
 
 interface Answer { verdict: string; ze: string; meta: string; icon: string; accent: string; cityName?: string; citySlug?: string; }
 
@@ -28,6 +29,7 @@ export function FreeQuestionBox({ city }: { city: City }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'erro');
       setAnswer(data);
+      track('pergunta_enviada', { cidade: city.n, resposta_cidade: data.city });
     } catch (e: any) {
       setErr(e.message || 'Algo deu errado. Tenta de novo.');
     } finally {
@@ -77,6 +79,7 @@ export function FreeQuestionBox({ city }: { city: City }) {
           {answer.citySlug ? (
             <a
               href={`/cidade/${answer.citySlug}`}
+              onClick={() => track('cidade_link_clicado', { cidade: answer.cityName })}
               style={{ display: 'inline-block', marginTop: 10, font: '700 12px var(--jakarta)', color: 'var(--blue)' }}
             >
               Ver previsão completa de {answer.cityName} →

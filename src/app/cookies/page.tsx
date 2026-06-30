@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { JsonLd, breadcrumbSchema, webPageSchema } from '@/components/JsonLd';
 
 export const metadata: Metadata = {
