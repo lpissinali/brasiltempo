@@ -137,3 +137,117 @@ All changes were typechecked in isolated harnesses against the real types + runt
 - Switch geocoding to GeoNames (`GEONAMES_USERNAME`) — last commercial-safety item.
 - Optional: upcoming moon-phase calendar (Nova/Cheia dates), dew-point card, SEO content engine,
   schedule the phrase cron once traffic grows.
+
+---
+
+# UPDATE — Session 3 (June 2026). This supersedes the sections above where they conflict.
+
+## Brand: the "Zé do Tempo" mascot was DROPPED
+- No named mascot anymore. All user-facing copy speaks as the brand — "o BrasilTempo" / "a gente".
+  (The "What it is" section at the very top is now outdated re: the mascot; the voice/personality
+  stays, just no character name.)
+- AI persona prompts in `src/lib/ask.ts` and `src/lib/phrases.ts` were rewritten to forbid a name
+  ("Você é a voz do BrasilTempo … nunca use um nome próprio nem se refira a um mascote").
+- INTERNAL identifiers were intentionally left as-is (`zePhrase`, `getZePhrases`, `ZeAnswer`,
+  `ResumoZe`, `zePhrases`/`zeAnswers` Firestore collections) — invisible to users, not worth the churn.
+
+## Logo + favicons + OG (official artwork)
+- `src/components/Logo.tsx` = the official **bare symbol** (golden sun + rays over blue waves,
+  transparent) used in the header/footer lockup with `Wordmark`.
+- Favicons via Next file conventions (auto-wired, no manual <link>): `src/app/icon.svg` (blue app
+  tile, white waves), `src/app/favicon.ico` (16/32/48), `src/app/apple-icon.png` (180, flattened on
+  blue). PWA: `public/icon-192.png`, `public/icon-512.png` + `src/app/manifest.ts`.
+- `public/og.png` (1200×630) = official lockup on the brand light bg. Source art in
+  `Brasiltempo logo ideas.zip/export/*` (symbol.svg, lockup.svg). Raster icons were generated from
+  the official SVG geometry (cairosvg) — if you tweak the art, regenerate these.
+
+## Metadata + SEO foundation (NEW)
+- `src/app/sitemap.ts` — dynamic: home, `/blog`, all curated cities, blog posts, legal pages.
+- `src/app/robots.ts` — allow all, disallow `/api/`, points to sitemap + canonical host.
+- `src/components/JsonLd.tsx` — server-rendered JSON-LD + helpers: `websiteSchema` (+Organization
+  logo), `breadcrumbSchema`, `faqSchema`, `articleSchema`, `webPageSchema`, `blogIndexSchema`.
+  Wired into home (WebSite), city pages (Breadcrumb+FAQ), blog index (Breadcrumb+Blog), blog posts
+  (Breadcrumb+BlogPosting+FAQ), legal pages (Breadcrumb+WebPage).
+- Canonicals via `alternates.canonical` on home/city/blog/legal. Root metadata has OG image
+  (`/og.png`), Twitter `summary_large_image`, `themeColor`, `applicationName`, `keywords`,
+  `formatDetection`, and the **AdSense verification meta** (`other['google-adsense-account'] =
+  'ca-pub-4831931651277615'`). City + blog-post `openGraph` re-declare `images: ['/og.png']`
+  (Next shallow-merges openGraph, so children must repeat it).
+- **Indexing policy:** curated cities = indexable + in sitemap; **long-tail searched cities
+  (`/cidade/[slug]?lat=…`) are `noindex, follow`** (in `generateMetadata`, keyed off
+  `getCityBySlug`). This is the scaled-content-abuse guard — keep it.
+
+## Blog (real content now) + legal pages
+- `src/lib/posts.tsx` — registry of 3 evergreen pt-BR articles (`Body: () => JSX.Element`):
+  `como-saber-se-vai-chover`, `o-que-e-indice-uv`, `previsao-7-dias-confiavel`. Add posts by
+  appending here; sitemap/index/route all read from it.
+- `src/app/blog/[slug]/page.tsx` — SSG (`generateStaticParams`, `dynamicParams=false`),
+  canonical + Article/Breadcrumb/FAQ JSON-LD, "continue lendo". `.article` prose style in
+  `globals.css`.
+- `src/app/privacidade`, `/cookies`, `/termos` — real baseline pt-BR pages (LGPD, cookies/AdSense,
+  no-warranty). **Get a lawyer to review before serious commercial use.** Linked in the footer
+  "Institucional" column.
+- Footer refactored (`layout.tsx`): dropped "Perguntas"; "Cidades populares" (`POPULAR`, 8) +
+  "Institucional". Home page has an expanded pre-footer SEO `.article` section with internal links.
+- `SevenDay` (WeatherSections) is now a **vertical list with min→max temp range bars** (distinct
+  from the `ProximasHoras` horizontal strip).
+
+## Coastal-aware weekend verdict (NEW)
+- `src/lib/coastmask.ts` — global 0.1° ocean bitmask (gzip+base64, ~56KB, generated from the
+  `global-land-mask` dataset). `src/lib/coast.ts` `isCoastal(lat,lon)` = open water within 30km
+  (lazy gunzip, server-only, size-guarded).
+- `verdicts.ts`: coastal cities keep the **praia** verdict; inland cities get a generic **"rolê ao
+  ar livre"** verdict (new pools `outBora/outArr/outCasa` in `phrases.ts`). Works for any city by
+  coordinates — no more "vai pra praia" in Brasília.
+
+## Cities: 18 → 101 (data-driven)
+- `src/lib/cities.ts` rewritten: `RAW: [name, uf, lat, lon][]`, **tz derived from UF** (AC=-5;
+  AM/RR/RO/MT/MS=-4; else -3), slug generated. First 27 = capitals, then ~74 most populous.
+- Exports: `CITIES`, `CAPITALS` (first 27), `POPULAR` (first 8), `DEFAULT_CITY` (São Paulo, the
+  home page default — kept on purpose), `getCityBySlug`. Coords are ~2-decimal (fine for the 0.5°
+  grid; fix individual ones if a forecast looks off).
+
+## Question box rework (`/api/pergunta`, `ask.ts`, `national.ts`, `FreeQuestionBox.tsx`)
+- **Icon follows the ANSWER, and is optional.** Haiku returns a `topic`
+  (chuva/sol/calor/frio/vento/umidade/praia/uv or ""); `TOPIC_ICON` maps it; off-topic/empty = no
+  icon. (Old behavior keyword-guessed and always showed rain.)
+- **Nationwide questions** (`NATIONAL_RE`): `src/lib/national.ts` `nationalSnapshot()` feeds the
+  **27 capitals'** current temps to Haiku (cached 30min); answers cached under a shared `national`
+  scope. Bounded to capitals so a cold snapshot is ≤27 fetches (NOT the full 101).
+- **Named city** → answers inline + a "Ver previsão completa de {cidade} →" link (`citySlug` stored
+  in the cached answer so it survives cache hits). No forced redirect.
+- **No-AI fallback upgraded** (matters: with a bad/missing key everything falls here): detects a
+  named curated city (whole-word, accent-insensitive, ambiguous-name denylist incl. natal/serra/
+  vitoria/santos), handles **temperature** questions (daily max/min range + 🌡️), shows the city link.
+- Box subtitle states scope: "Sobre {cidade} — ou cite outra cidade, ou pergunte do Brasil todo."
+
+## Analytics + AdSense
+- GA4: `src/components/Analytics.tsx` (next/script, **production-only**, id from `NEXT_PUBLIC_GA_ID`
+  = `G-JXFL7E2XRS`, set in `apphosting.yaml` BUILD+RUNTIME and `.env.example`).
+- Custom events via `src/lib/track.ts` (no-op when gtag absent): `pergunta_enviada`,
+  `cidade_buscada`, `localizacao_usada`, `cidade_link_clicado`. In GA, register the params
+  (`cidade`, `uf`, …) as event-scoped **custom dimensions** to segment, and mark events as Key Events.
+  Also link Search Console + AdSense in GA Admin → Product links.
+- AdSense site verification meta tag added (see Metadata section).
+
+## Rendering / freshness (IMPORTANT)
+- The home page (`src/app/page.tsx`) is **`export const dynamic = 'force-dynamic'`** — it must render
+  per request so the clock-sensitive UI ("Agora" / "Próximas horas") stays current. Do NOT put it
+  back on `revalidate`/ISR: that froze the rendered time at deploy for hours (App Hosting served the
+  stale snapshot). Freshness is safe because `getForecast` has its own 30-min cache (mem + Firestore),
+  so per-request render is cheap and doesn't re-hit NOAA.
+- City pages are already dynamic (they read `searchParams`), so they weren't affected.
+
+## ⚠️ Build/deploy gotcha (READ THIS)
+- The agent sandbox mount **truncates files on read intermittently**, so `tsc`/`next build` there
+  produce phantom errors AND it once tricked the agent into deleting a still-used `import Link`
+  (broke a Cloud Build). **Always run `npm run typecheck && npm run build` on Windows before
+  `firebase deploy --only apphosting`.** Don't trust an in-sandbox build.
+
+## Still open / next ideas (updated)
+- Switch geocoding to GeoNames (`GEONAMES_USERNAME`) — last commercial-safety item before monetizing.
+- Lawyer review of `/privacidade`, `/cookies`, `/termos`.
+- GA: register custom dimensions, mark Key Events, link Search Console + AdSense; consider an LGPD
+  cookie-consent banner (GA loads unconditionally today).
+- Optional: dew-point card, moon-phase calendar, more blog posts, fix any off coordinates in the
+  100-city list, schedule the phrase cron once traffic grows.

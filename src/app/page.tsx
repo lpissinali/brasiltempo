@@ -18,8 +18,11 @@ import {
   PrevisaoCompletaLink,
 } from '@/components/WeatherSections';
 
-// SSR: re-render at most every 30 min (data is cached server-side too).
-export const revalidate = 1800;
+// Render per request so the clock-sensitive UI ("Agora", "Próximas horas") is
+// always current. This does NOT re-hit NOAA per visitor: getForecast keeps its
+// own 30-min cache (in-memory + Firestore), so only the cheap React render runs
+// each time. (ISR froze the home page's rendered time between revalidations.)
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
